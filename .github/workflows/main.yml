@@ -21,5 +21,7 @@ jobs:
         run: npm install
       - name: Install client dependencies
         run: cd client && npm install
-      - name: Run Jest tests
-        run: npm test
+      - name: Run Jest for Frontend
+        run: npm run test:frontend
+      - name: Run Jest for Backend
+        run: npm run test:backend

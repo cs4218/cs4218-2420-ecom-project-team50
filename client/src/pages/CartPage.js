@@ -22,6 +22,10 @@ const CartPage = () => {
     try {
       let total = 0;
       cart?.map((item) => {
+        // Add validation to ensure price is a number
+        if (typeof item.price !== 'number' || isNaN(item.price)) {
+          throw new Error('Invalid price type');
+        }
         total = total + item.price;
       });
       return total.toLocaleString("en-US", {
@@ -29,7 +33,8 @@ const CartPage = () => {
         currency: "USD",
       });
     } catch (error) {
-      console.log(error);
+      toast.error("Error calculating total price");
+      return "$0.00";
     }
   };
   //detele item
@@ -41,9 +46,9 @@ const CartPage = () => {
       setCart(myCart);
       localStorage.setItem("cart", JSON.stringify(myCart));
     } catch (error) {
-      console.log(error);
+      toast.error("Error removing item from cart");
     }
-  };
+  };  
 
   //get payment gateway token
   const getToken = async () => {
@@ -51,7 +56,7 @@ const CartPage = () => {
       const { data } = await axios.get("/api/v1/product/braintree/token");
       setClientToken(data?.clientToken);
     } catch (error) {
-      console.log(error);
+      toast.error("Error fetching payment token");
     }
   };
   useEffect(() => {
@@ -73,7 +78,7 @@ const CartPage = () => {
       navigate("/dashboard/user/orders");
       toast.success("Payment Completed Successfully ");
     } catch (error) {
-      console.log(error);
+      toast.error("Payment failed");
       setLoading(false);
     }
   };
@@ -162,7 +167,7 @@ const CartPage = () => {
                         })
                       }
                     >
-                      Plase Login to checkout
+                      Please Login to checkout
                     </button>
                   )}
                 </div>

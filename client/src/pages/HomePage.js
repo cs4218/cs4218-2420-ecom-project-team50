@@ -28,7 +28,7 @@ const HomePage = () => {
         setCategories(data?.category);
       }
     } catch (error) {
-      console.log(error);
+      toast.error("Failed to get categories");
     }
   };
 
@@ -45,7 +45,7 @@ const HomePage = () => {
       setProducts(data.products);
     } catch (error) {
       setLoading(false);
-      console.log(error);
+      toast.error("Failed to get products");
     }
   };
 
@@ -55,7 +55,7 @@ const HomePage = () => {
       const { data } = await axios.get("/api/v1/product/product-count");
       setTotal(data?.total);
     } catch (error) {
-      console.log(error);
+      toast.error("Failed to get total count");
     }
   };
 
@@ -69,9 +69,10 @@ const HomePage = () => {
       setLoading(true);
       const { data } = await axios.get(`/api/v1/product/product-list/${page}`);
       setLoading(false);
-      setProducts([...products, ...data?.products]);
+      // setProducts([...products, ...data?.products]);
+      setProducts(prev => [...prev, ...data?.products]);
     } catch (error) {
-      console.log(error);
+      toast.error("Failed to get products");
       setLoading(false);
     }
   };
@@ -86,24 +87,36 @@ const HomePage = () => {
     }
     setChecked(all);
   };
-  useEffect(() => {
-    if (!checked.length || !radio.length) getAllProducts();
-  }, [checked.length, radio.length]);
+  // useEffect(() => {
+  //   if (!checked.length && !radio.length) getAllProducts();
+  // }, [checked.length, radio.length]);
+
+  // useEffect(() => {
+  //   if (checked.length || radio.length) filterProduct();
+  // }, [checked, radio]);
 
   useEffect(() => {
-    if (checked.length || radio.length) filterProduct();
+    if (!checked.length && !radio.length) {
+      getAllProducts();
+    } else {
+      filterProduct();
+    }
   }, [checked, radio]);
+  
 
   //get filterd product
   const filterProduct = async () => {
     try {
+      console.log("overr heree")
       const { data } = await axios.post("/api/v1/product/product-filters", {
         checked,
         radio,
       });
+      console.log("data", data)
+      console.log("data.products", data?.products)
       setProducts(data?.products);
     } catch (error) {
-      console.log(error);
+      toast.error("Failed to get products");
     }
   };
   return (
@@ -180,6 +193,7 @@ const HomePage = () => {
                       More Details
                     </button>
                     <button
+                      data-testid="add-to-cart-button"
                       className="btn btn-dark ms-1"
                       onClick={() => {
                         setCart([...cart, p]);

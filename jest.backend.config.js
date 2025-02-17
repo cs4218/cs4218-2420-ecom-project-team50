@@ -1,4 +1,4 @@
-export default = {
+export default {
 	// display name
 	displayName: "backend",
 

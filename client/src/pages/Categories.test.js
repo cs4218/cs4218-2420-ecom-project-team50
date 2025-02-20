@@ -49,4 +49,35 @@ describe("Categories Test", () => {
 			`/category/${mockCategories[0].slug}`
 		);
 	});
+
+	test("renders empty state message when no categories exist", () => {
+		// Mock the hook to return empty array
+		useCategory.mockReturnValue([]);
+
+		const { getByText } = render(
+			<BrowserRouter>
+				<Categories />
+			</BrowserRouter>
+		);
+
+		// Check if empty state message is displayed
+		expect(getByText("No categories found")).toBeInTheDocument();
+	});
+
+	test("renders categories with unique keys identifier", () => {
+		const { container } = render(
+			<BrowserRouter>
+				<Categories />
+			</BrowserRouter>
+		);
+
+		const categoryElements = container.querySelectorAll(".col-md-6");
+		const keys = Array.from(categoryElements).map((el) =>
+			el.getAttribute("key")
+		);
+		const uniqueKeys = new Set(keys);
+
+		expect(keys.length).toBe(uniqueKeys.size); // Ensure keys are unique size (1) as it is unique
+		expect(keys.length).toBe(mockCategories.length); // Ensure the number of keys matches the number of categories (1 per category)
+	});
 });

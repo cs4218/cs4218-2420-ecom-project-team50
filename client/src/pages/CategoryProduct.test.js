@@ -1,26 +1,35 @@
 import React from "react";
-import { render, waitFor } from "@testing-library/react";
+import { render, waitFor, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import axios from "axios";
 import CategoryProduct from "./CategoryProduct";
+import useCategory from "../hooks/useCategory";
+import { useNavigate } from "react-router-dom";
+import { screen } from "@testing-library/dom";
 
 // Mock axios
 jest.mock("axios");
 //Mock useCategory hook
 jest.mock("../hooks/useCategory", () => jest.fn());
 
-//Mock header component
-jest.mock("../components/Layout", () => ({ children }) => (
-	<div>{children}</div>
-));
-
 // Mock Layout component
 jest.mock("../components/Layout", () => ({ children }) => (
 	<div>{children}</div>
 ));
 
+// Mock Navigation
+jest.mock("react-router-dom", () => ({
+	...jest.requireActual("react-router-dom"),
+	useNavigate: jest.fn(),
+}));
+
 describe("CategoryProduct Test", () => {
+	const mockCategory = {
+		name: "Electronics",
+		slug: "electronics",
+	};
+
 	const mockData = {
 		products: [
 			{
@@ -38,11 +47,12 @@ describe("CategoryProduct Test", () => {
 				slug: "product-2",
 			},
 		],
-		category: { name: "Electronics" },
+		category: { name: "Electronics", slug: "electronics" },
 	};
 
 	beforeEach(() => {
 		// Reset API response
+		useCategory.mockReturnValue(mockCategory);
 		axios.get.mockResolvedValue({ data: mockData });
 	});
 
@@ -61,7 +71,7 @@ describe("CategoryProduct Test", () => {
 		});
 	});
 
-	test("renders product with details", async () => {
+	test("renders product with its more details button", async () => {
 		const { getAllByRole, getByText } = render(
 			<MemoryRouter initialEntries={["/category/electronics"]}>
 				<Routes>
@@ -138,5 +148,58 @@ describe("CategoryProduct Test", () => {
 			expect(getByText("Category - Electronics")).toBeInTheDocument();
 			expect(getByText("0 result found")).toBeInTheDocument();
 		});
+	});
+
+	test("button correctly navigates to product detail page", async () => {
+		const mockNavigate = jest.fn(); // Create a mock function for navigate
+		useNavigate.mockReturnValue(mockNavigate); // return mock func
+		axios.get.mockResolvedValueOnce({
+			data: {
+				products: [
+					{
+						_id: "1",
+						name: "Product 1",
+						description: "Description for Product 1",
+						price: 50,
+						slug: "product-1",
+					},
+				],
+				category: { name: "Electronics", slug: "electronics" },
+			},
+		});
+
+		const { getAllByRole, getByText } = render(
+			<MemoryRouter initialEntries={["/category/electronics"]}>
+				<Routes>
+					<Route path="/category/:slug" element={<CategoryProduct />} />
+				</Routes>
+			</MemoryRouter>
+		);
+
+		await waitFor(() => {
+			const button = getByText("More Details", { selector: "button" });
+			fireEvent.click(button);
+
+			// Check if navigation occurred
+			expect(mockNavigate).toHaveBeenCalledWith("/product/product-1"); // Verify that the Product Detail page is rendered
+		});
+	});
+
+	test("handles console log errors", async () => {
+		const spy = jest.spyOn(console, "log").mockImplementation(() => {});
+		axios.get.mockRejectedValueOnce(new Error("Network Error"));
+
+		const { getByText } = render(
+			<MemoryRouter initialEntries={["/category/electronics"]}>
+				<Routes>
+					<Route path="/category/:slug" element={<CategoryProduct />} />
+				</Routes>
+			</MemoryRouter>
+		);
+
+		await waitFor(() => {
+			expect(spy).toHaveBeenCalledWith(expect.any(Error)); // Check if console.log was called with an error
+		});
+		spy.mockRestore();
 	});
 });

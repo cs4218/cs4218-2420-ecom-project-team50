@@ -145,7 +145,7 @@ describe("HomePage Component", () => {
     });
   });
 
-  it("should handle category API error gracefully", async () => {
+  it("should handle category API error", async () => {
     axios.get.mockRejectedValueOnce(new Error("Network error"));
 
     render(
@@ -232,7 +232,7 @@ describe("HomePage Component", () => {
     });
   });
 
-  it("should handle products API error gracefully", async () => {
+  it("should handle products API error", async () => {
     axios.get.mockRejectedValueOnce(new Error("Network error"));
 
     render(
@@ -247,7 +247,7 @@ describe("HomePage Component", () => {
     });
   });
 
-  it("should handle price filter selection", async () => {
+  it("should ensure correct price filter selection", async () => {
     axios.get.mockResolvedValueOnce({
       data: { success: true, category: [] },
     });
@@ -381,6 +381,290 @@ describe("HomePage Component", () => {
     await waitFor(() => {
       const loadMoreButton = screen.getByText("Loadmore");
       expect(loadMoreButton).toBeInTheDocument();
+    });
+  });
+
+  it("should reset filters correctly", async () => {
+    axios.get.mockReset();
+    axios.post.mockReset();
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        message: "All Categories List",
+        category: sampleCategories,
+      },
+    });
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: sampleProducts,
+      },
+    });
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        total: 10,
+      },
+    });
+    
+    axios.post.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: [sampleProducts[0]],
+      },
+    });
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: sampleProducts,
+      },
+    });
+
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Electronics")).toBeInTheDocument();
+    });
+    
+    const categoryCheckbox = screen.getByRole("checkbox", { name: "Electronics" });
+    fireEvent.click(categoryCheckbox);
+    
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalledWith(
+        "/api/v1/product/product-filters",
+        expect.objectContaining({
+          checked: expect.arrayContaining(["electronics-category-id"]),
+          radio: []
+        })
+      );
+    });
+    
+    const resetButton = screen.getByRole("button", { name: /RESET FILTERS/i });
+    fireEvent.click(resetButton);
+    
+    await waitFor(() => {
+      expect(axios.get).toHaveBeenCalledWith("/api/v1/product/product-list/1");
+    });
+    
+    expect(screen.getByText("Filter By Category")).toBeInTheDocument();
+    expect(screen.getByText("All Products")).toBeInTheDocument();
+  });
+
+  it("should handle pagination correctly when clicking 'Loadmore'", async () => {
+    axios.get.mockReset();
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: [sampleProducts[0]],
+      },
+    });
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        total: 10,
+      },
+    });
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: [sampleProducts[1]],
+      },
+    });
+
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(axios.get).toHaveBeenCalledWith("/api/v1/product/product-list/1");
+      expect(axios.get).toHaveBeenCalledWith("/api/v1/product/product-count");
+    });
+    
+    const loadMoreButton = await screen.findByText("Loadmore");
+    expect(loadMoreButton).toBeInTheDocument();
+    
+    fireEvent.click(loadMoreButton);
+    
+    await waitFor(() => {
+      expect(axios.get).toHaveBeenCalledWith("/api/v1/product/product-list/2");
+    });
+    
+    expect(screen.getByText("All Products")).toBeInTheDocument();
+    expect(screen.getByText("Filter By Category")).toBeInTheDocument();
+  });
+
+  it("should handle loadmore API error gracefully", async () => {
+    axios.get.mockReset();
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: [sampleProducts[0]],
+      },
+    });
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        total: 10
+      },
+    });
+    
+    axios.get.mockRejectedValueOnce(new Error("Network error loading more products"));
+
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(axios.get).toHaveBeenCalledWith("/api/v1/product/product-list/1");
+      expect(axios.get).toHaveBeenCalledWith("/api/v1/product/product-count");
+    });
+    
+    const loadMoreButton = await screen.findByText("Loadmore");
+    expect(loadMoreButton).toBeInTheDocument();
+    
+    fireEvent.click(loadMoreButton);
+    
+    await waitFor(() => {
+      expect(axios.get).toHaveBeenCalledWith("/api/v1/product/product-list/2");
+    });
+    
+   
+    await waitFor(() => {
+      expect(screen.getByText("Loadmore")).toBeInTheDocument();
+    });
+  });
+
+  it("should handle product count API error gracefully", async () => {
+    axios.get.mockReset();
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        message: "All Categories List",
+        category: sampleCategories,
+      },
+    });
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: sampleProducts,
+      },
+    });
+    
+    axios.get.mockRejectedValueOnce(new Error("Failed to get product count"));
+
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category");
+    });
+    
+    await waitFor(() => {
+      expect(axios.get).toHaveBeenCalledWith("/api/v1/product/product-list/1");
+    });
+    
+    await waitFor(() => {
+      expect(axios.get).toHaveBeenCalledWith("/api/v1/product/product-count");
+    });
+
+    expect(screen.getByText("All Products")).toBeInTheDocument();
+    expect(screen.getByText("Filter By Category")).toBeInTheDocument();
+  });
+
+  it("should handle product filters when both category and price filters are active", async () => {
+    axios.get.mockReset();
+    axios.post.mockReset();
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        message: "All Categories List",
+        category: sampleCategories,
+      },
+    });
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: sampleProducts,
+      },
+    });
+    
+    axios.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        total: 2
+      }
+    });
+    
+    axios.post.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: [sampleProducts[0]],
+      },
+    });
+    
+    axios.post.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: [],
+      },
+    });
+
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Electronics")).toBeInTheDocument();
+    });
+    
+    fireEvent.click(screen.getByRole("checkbox", { name: "Electronics" }));
+    
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalledWith(
+        "/api/v1/product/product-filters",
+        expect.objectContaining({
+          checked: expect.arrayContaining(["electronics-category-id"]),
+          radio: []
+        })
+      );
+    });
+    
+    fireEvent.click(screen.getByLabelText("$0 to 19"));
+    
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalledWith(
+        "/api/v1/product/product-filters",
+        expect.objectContaining({
+          checked: expect.arrayContaining(["electronics-category-id"]),
+          radio: expect.anything()
+        })
+      );
     });
   });
 });

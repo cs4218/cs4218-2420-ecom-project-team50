@@ -105,7 +105,7 @@ describe('CartPage Component', () => {
     const invalidCart = [{
       _id: '1',
       name: 'Invalid Product',
-      price: undefined, // Invalid price to trigger error
+      price: undefined,
       description: 'Test Description'
     }];
     
@@ -162,8 +162,24 @@ describe('CartPage Component', () => {
     );
     expect(localStorageMock.removeItem).toHaveBeenCalledWith('cart');
     expect(mockSetCart).toHaveBeenCalledWith([]);
-    expect(toast.success).toHaveBeenCalledWith('Payment Completed Successfully ');
+    expect(toast.success).toHaveBeenCalledWith('Payment Completed Successfully');
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard/user/orders');
+  });
+
+  test('handles payment failure from server response', async () => {
+    axios.post.mockResolvedValueOnce({ 
+      data: { success: false, message: 'Payment declined by bank' } 
+    });
+    
+    const { getByText } = await renderCartPage();
+
+    await act(async () => {
+      fireEvent.click(getByText('Make Payment'));
+    });
+    
+    expect(toast.error).toHaveBeenCalledWith('Payment declined by bank');
+    expect(mockSetCart).not.toHaveBeenCalled();
+    expect(localStorageMock.removeItem).not.toHaveBeenCalled();
   });
 
   test('handles payment processing error', async () => {
@@ -212,7 +228,6 @@ describe('CartPage Component', () => {
   });
 
   test('navigates to login page for guest checkout', async () => {
-    // Mock auth with no token
     jest.spyOn(require('../context/auth'), 'useAuth')
       .mockImplementation(() => [{ user: null, token: null }, mockSetAuth]);
 
@@ -227,7 +242,7 @@ describe('CartPage Component', () => {
 
   test('navigates to profile when auth token exists but no address', async () => {
     const authWithoutAddress = {
-      user: { name: 'Test User' }, // No address
+      user: { name: 'Test User' },
       token: 'fake-token'
     };
     
@@ -241,5 +256,18 @@ describe('CartPage Component', () => {
     });
   
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard/user/profile');
+  });
+
+  test('handles missing product description', async () => {
+    const noDescriptionCart = [{
+      _id: '1',
+      name: 'Test Product',
+      price: 100
+    }];
+    
+    jest.spyOn(require('../context/cart'), 'useCart')
+      .mockImplementation(() => [noDescriptionCart, mockSetCart]);
+
+    await renderCartPage();
   });
 });

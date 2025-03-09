@@ -17,12 +17,10 @@ const CartPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  //total price
   const totalPrice = () => {
     try {
       let total = 0;
-      cart?.map((item) => {
-        // Add validation to ensure price is a number
+      cart?.forEach((item) => {
         if (typeof item.price !== 'number' || isNaN(item.price)) {
           throw new Error('Invalid price type');
         }
@@ -37,7 +35,7 @@ const CartPage = () => {
       return "$0.00";
     }
   };
-  //detele item
+
   const removeCartItem = (pid) => {
     try {
       let myCart = [...cart];
@@ -50,7 +48,6 @@ const CartPage = () => {
     }
   };  
 
-  //get payment gateway token
   const getToken = async () => {
     try {
       const { data } = await axios.get("/api/v1/product/braintree/token");
@@ -59,11 +56,11 @@ const CartPage = () => {
       toast.error("Error fetching payment token");
     }
   };
+  
   useEffect(() => {
     getToken();
   }, [auth?.token]);
 
-  //handle payments
   const handlePayment = async () => {
     try {
       setLoading(true);
@@ -72,52 +69,60 @@ const CartPage = () => {
         nonce,
         cart,
       });
+      
+      if (!data?.success) {
+        setLoading(false);
+        toast.error(data?.message || "Payment failed");
+        return;
+      }
+      
       setLoading(false);
       localStorage.removeItem("cart");
       setCart([]);
       navigate("/dashboard/user/orders");
-      toast.success("Payment Completed Successfully ");
+      toast.success("Payment Completed Successfully");
     } catch (error) {
-      toast.error("Payment failed");
       setLoading(false);
+      toast.error("Payment failed");
     }
   };
+  
   return (
     <Layout>
-      <div className=" cart-page">
+      <div className="cart-page">
         <div className="row">
           <div className="col-md-12">
             <h1 className="text-center bg-light p-2 mb-1">
               {!auth?.user
                 ? "Hello Guest"
-                : `Hello  ${auth?.token && auth?.user?.name}`}
+                : `Hello ${auth?.token && auth?.user?.name}`}
               <p className="text-center">
                 {cart?.length
                   ? `You Have ${cart.length} items in your cart ${
-                      auth?.token ? "" : "please login to checkout !"
+                      auth?.token ? "" : "please login to checkout!"
                     }`
-                  : " Your Cart Is Empty"}
+                  : "Your Cart Is Empty"}
               </p>
             </h1>
           </div>
         </div>
-        <div className="container ">
-          <div className="row ">
-            <div className="col-md-7  p-0 m-0">
+        <div className="container">
+          <div className="row">
+            <div className="col-md-7 p-0 m-0">
               {cart?.map((p) => (
                 <div className="row card flex-row" key={p._id}>
                   <div className="col-md-4">
                     <img
                       src={`/api/v1/product/product-photo/${p._id}`}
                       className="card-img-top"
-                      alt={p.name}
+                      alt={p.name || "Product"}
                       width="100%"
                       height={"130px"}
                     />
                   </div>
                   <div className="col-md-4">
                     <p>{p.name}</p>
-                    <p>{p.description.substring(0, 30)}</p>
+                    <p>{p.description?.substring(0, 30) || ""}</p>
                     <p>Price : {p.price}</p>
                   </div>
                   <div className="col-md-4 cart-remove-btn">
@@ -131,7 +136,7 @@ const CartPage = () => {
                 </div>
               ))}
             </div>
-            <div className="col-md-5 cart-summary ">
+            <div className="col-md-5 cart-summary">
               <h2>Cart Summary</h2>
               <p>Total | Checkout | Payment</p>
               <hr />

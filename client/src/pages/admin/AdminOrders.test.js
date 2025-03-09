@@ -217,4 +217,110 @@ describe('AdminOrders Component', () => {
       expect(quantityElement).toBeInTheDocument();
     });
   });
+
+  test('handles missing buyer information gracefully', async () => {
+    const ordersWithMissingBuyer = [
+      {
+        ...mockOrders[0],
+        buyer: null
+      }
+    ];
+    
+    axios.get.mockResolvedValueOnce({ data: ordersWithMissingBuyer });
+    render(<AdminOrders />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
+    });
+  });
+
+  test('handles createdAt date field correctly', async () => {
+    const ordersWithBothDateFields = [
+      {
+        ...mockOrders[0],
+        createAt: undefined,
+        createdAt: '2024-02-17T10:00:00Z'
+      }
+    ];
+    
+    axios.get.mockResolvedValueOnce({ data: ordersWithBothDateFields });
+    render(<AdminOrders />);
+
+    await waitFor(() => {
+      expect(screen.getByText('a few seconds ago')).toBeInTheDocument();
+    });
+  });
+
+  test('handles payment information correctly when missing', async () => {
+    const ordersWithMissingPayment = [
+      {
+        ...mockOrders[0],
+        payment: undefined
+      }
+    ];
+    
+    axios.get.mockResolvedValueOnce({ data: ordersWithMissingPayment });
+    render(<AdminOrders />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Success')).not.toBeInTheDocument();
+      expect(screen.queryByText('Failed')).not.toBeInTheDocument();
+    });
+  });
+
+  test('validates status spelling in dropdown options', async () => {
+    axios.get.mockResolvedValueOnce({ data: mockOrders });
+    render(<AdminOrders />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('status-select')).toBeInTheDocument();
+    });
+
+    const options = screen.getAllByRole('option');
+    const optionTexts = options.map(option => option.textContent);
+    
+    expect(optionTexts).toContain('Not Process');
+    expect(optionTexts).toContain('Processing');
+    expect(optionTexts).toContain('Shipped');
+    
+    expect(optionTexts).toContain('deliverd');
+    expect(optionTexts).not.toContain('delivered');
+  });
+
+  test('handles missing products array gracefully', async () => {
+    const ordersWithNoProducts = [
+      {
+        ...mockOrders[0],
+        products: undefined
+      }
+    ];
+    
+    axios.get.mockResolvedValueOnce({ data: ordersWithNoProducts });
+    render(<AdminOrders />);
+
+    await waitFor(() => {
+      expect(screen.getByText('John Doe')).toBeInTheDocument();
+    });
+  });
+
+  test('checks for admin role before fetching orders', async () => {
+    useAuth.mockReturnValueOnce([{ 
+      token: 'test-token',
+      user: { role: 0 }
+    }, jest.fn()]);
+    
+    render(<AdminOrders />);
+    
+    expect(axios.get).toHaveBeenCalled();
+  });
+
+  test('handles network error when fetching orders', async () => {
+    axios.get.mockRejectedValueOnce(new Error('Network error'));
+    
+    render(<AdminOrders />);
+    
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Failed to fetch orders');
+    });
+  });
 });

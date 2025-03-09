@@ -70,17 +70,14 @@ describe('CreateCategory Component', () => {
   test('renders CreateCategory component and fetches categories on mount', async () => {
     render(<CreateCategory />);
 
-    // Check if AdminMenu is rendered
     expect(screen.getByText('Admin Menu')).toBeInTheDocument();
 
-    // Wait for categories to be loaded
     await waitFor(() => {
       mockCategories.forEach(category => {
         expect(screen.getByText(category.name)).toBeInTheDocument();
       });
     });
 
-    // Verify axios get was called
     expect(axios.get).toHaveBeenCalledWith('/api/v1/category/get-category');
   });
 
@@ -91,7 +88,6 @@ describe('CreateCategory Component', () => {
     const input = screen.getByTestId('create-category-input');
     const submitButton = screen.getByText('Submit');
 
-    // Enter category name
     fireEvent.change(input, { target: { value: 'New Category' } });
     fireEvent.click(submitButton);
 
@@ -116,7 +112,6 @@ describe('CreateCategory Component', () => {
     const input = screen.getByTestId('create-category-input');
     const submitButton = screen.getByText('Submit');
 
-    // Enter category name
     fireEvent.change(input, { target: { value: 'New Category' } });
     fireEvent.click(submitButton);
 
@@ -133,7 +128,6 @@ describe('CreateCategory Component', () => {
     const input = screen.getByTestId('create-category-input');
     const submitButton = screen.getByText('Submit');
 
-    // Enter category name
     fireEvent.change(input, { target: { value: 'New Category' } });
     fireEvent.click(submitButton);
 
@@ -170,7 +164,6 @@ describe('CreateCategory Component', () => {
   test('updates an existing category', async () => {
     render(<CreateCategory />);
 
-    // Wait for categories to load
     await waitFor(() => {
       expect(screen.getByText('Category 1')).toBeInTheDocument();
     });
@@ -188,7 +181,6 @@ describe('CreateCategory Component', () => {
     fireEvent.change(modalInput, { target: { value: 'Updated Category' } });
     fireEvent.submit(updateForm);
 
-    // Wait for update call
     await waitFor(() => {
       expect(axios.put).toHaveBeenCalledWith(
         '/api/v1/category/update-category/1', 
@@ -208,7 +200,6 @@ describe('CreateCategory Component', () => {
 
     render(<CreateCategory />);
 
-    // Wait for categories to load
     await waitFor(() => {
       expect(screen.getByText('Category 1')).toBeInTheDocument();
     });
@@ -216,7 +207,6 @@ describe('CreateCategory Component', () => {
     const editButtons = screen.getAllByText('Edit');
     fireEvent.click(editButtons[0]);
 
-    // Find modal form
     const modalInput = screen.getByTestId('update-category-input');
     const updateForm = screen.getByTestId('update-category-form');
 
@@ -234,7 +224,6 @@ describe('CreateCategory Component', () => {
 
     render(<CreateCategory />);
 
-    // Wait for categories to load
     await waitFor(() => {
       expect(screen.getByText('Category 1')).toBeInTheDocument();
     });
@@ -242,11 +231,9 @@ describe('CreateCategory Component', () => {
     const editButtons = screen.getAllByText('Edit');
     fireEvent.click(editButtons[0]);
 
-    // Find modal form
     const modalInput = screen.getByTestId('update-category-input');
     const updateForm = screen.getByTestId('update-category-form');
 
-    // Change category name
     fireEvent.change(modalInput, { target: { value: 'Updated Category' } });
     fireEvent.submit(updateForm);
 
@@ -258,7 +245,6 @@ describe('CreateCategory Component', () => {
   test('deletes a category successfully', async () => {
     render(<CreateCategory />);
 
-    // Wait for categories to load
     await waitFor(() => {
       expect(screen.getByText('Category 1')).toBeInTheDocument();
     });
@@ -266,7 +252,6 @@ describe('CreateCategory Component', () => {
     const deleteButtons = screen.getAllByText('Delete');
     fireEvent.click(deleteButtons[0]);
 
-    // Wait for delete call
     await waitFor(() => {
       expect(axios.delete).toHaveBeenCalledWith('/api/v1/category/delete-category/1');
       expect(toast.success).toHaveBeenCalledWith('Category is deleted');
@@ -283,7 +268,6 @@ describe('CreateCategory Component', () => {
 
     render(<CreateCategory />);
 
-    // Wait for categories to load
     await waitFor(() => {
       expect(screen.getByText('Category 1')).toBeInTheDocument();
     });
@@ -301,7 +285,6 @@ describe('CreateCategory Component', () => {
 
     render(<CreateCategory />);
 
-    // Wait for categories to load
     await waitFor(() => {
       expect(screen.getByText('Category 1')).toBeInTheDocument();
     });
@@ -317,7 +300,6 @@ describe('CreateCategory Component', () => {
   test('closes the update modal when cancel is clicked', async () => {
     render(<CreateCategory />);
 
-    // Wait for categories to load
     await waitFor(() => {
       expect(screen.getByText('Category 1')).toBeInTheDocument();
     });
@@ -325,16 +307,221 @@ describe('CreateCategory Component', () => {
     const editButtons = screen.getAllByText('Edit');
     fireEvent.click(editButtons[0]);
 
-    // Verify modal is visible
     const modal = screen.getByTestId('modal');
     expect(modal).toBeInTheDocument();
 
     const closeButton = screen.getByLabelText('close');
     fireEvent.click(closeButton);
 
-    // Verify modal is no longer visible
     await waitFor(() => {
       expect(screen.queryByTestId('modal')).not.toBeInTheDocument();
+    });
+  });
+
+  test('prevents creating a category with an existing name', async () => {
+    render(<CreateCategory />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Category 1')).toBeInTheDocument();
+    });
+
+    const input = screen.getByTestId('create-category-input');
+    const submitButton = screen.getByText('Submit');
+
+    // Try to create with existing name
+    fireEvent.change(input, { target: { value: 'Category 1' } });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(axios.post).not.toHaveBeenCalled();
+      expect(toast.error).toHaveBeenCalledWith('Category "Category 1" already exists');
+      expect(input.value).toBe(''); // Input should be reset
+    });
+  });
+
+  test('prevents creating a category with an existing name (case insensitive)', async () => {
+    render(<CreateCategory />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Category 1')).toBeInTheDocument();
+    });
+
+    const input = screen.getByTestId('create-category-input');
+    const submitButton = screen.getByText('Submit');
+
+    // Try to create with existing name (different case)
+    fireEvent.change(input, { target: { value: 'category 1' } });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(axios.post).not.toHaveBeenCalled();
+      expect(toast.error).toHaveBeenCalledWith('Category "category 1" already exists');
+      expect(input.value).toBe(''); // Input should be reset
+    });
+  });
+
+  test('prevents updating category to an existing name', async () => {
+    render(<CreateCategory />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Category 1')).toBeInTheDocument();
+      expect(screen.getByText('Category 2')).toBeInTheDocument();
+    });
+
+    const editButtons = screen.getAllByText('Edit');
+    fireEvent.click(editButtons[0]); // Edit Category 1
+
+    const modalInput = screen.getByTestId('update-category-input');
+    const updateForm = screen.getByTestId('update-category-form');
+
+    // Try to update to existing name (Category 2)
+    fireEvent.change(modalInput, { target: { value: 'Category 2' } });
+    fireEvent.submit(updateForm);
+
+    await waitFor(() => {
+      expect(axios.put).not.toHaveBeenCalled();
+      expect(toast.error).toHaveBeenCalledWith('Category "Category 2" already exists');
+      expect(modalInput.value).toBe('Category 1'); // Should reset to original name
+    });
+  });
+
+  test('prevents updating category to an existing name (case insensitive)', async () => {
+    render(<CreateCategory />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Category 1')).toBeInTheDocument();
+      expect(screen.getByText('Category 2')).toBeInTheDocument();
+    });
+
+    const editButtons = screen.getAllByText('Edit');
+    fireEvent.click(editButtons[0]); // Edit Category 1
+
+    const modalInput = screen.getByTestId('update-category-input');
+    const updateForm = screen.getByTestId('update-category-form');
+
+    // Try to update to existing name with different case
+    fireEvent.change(modalInput, { target: { value: 'category 2' } });
+    fireEvent.submit(updateForm);
+
+    await waitFor(() => {
+      expect(axios.put).not.toHaveBeenCalled();
+      expect(toast.error).toHaveBeenCalledWith('Category "category 2" already exists');
+      expect(modalInput.value).toBe('Category 1'); // Should reset to original name
+    });
+  });
+
+  test('allows updating a category name with different case', async () => {
+    render(<CreateCategory />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Category 1')).toBeInTheDocument();
+    });
+
+    const editButtons = screen.getAllByText('Edit');
+    fireEvent.click(editButtons[0]); // Edit Category 1
+
+    const modalInput = screen.getByTestId('update-category-input');
+    const updateForm = screen.getByTestId('update-category-form');
+
+    // Change case of the same category
+    fireEvent.change(modalInput, { target: { value: 'category 1' } });
+    fireEvent.submit(updateForm);
+
+    // Should allow update since it's the same category (just case change)
+    await waitFor(() => {
+      expect(axios.put).toHaveBeenCalledWith(
+        '/api/v1/category/update-category/1', 
+        { name: 'category 1' }
+      );
+      expect(toast.success).toHaveBeenCalledWith('category 1 is updated');
+    });
+  });
+
+  test('prevents creating a category with empty name', async () => {
+    render(<CreateCategory />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Category 1')).toBeInTheDocument();
+    });
+
+    const input = screen.getByTestId('create-category-input');
+    const submitButton = screen.getByText('Submit');
+
+    // Try to submit with empty name
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(axios.post).not.toHaveBeenCalled();
+      expect(toast.error).toHaveBeenCalledWith('Category name cannot be empty');
+    });
+  });
+
+  test('prevents creating a category with only whitespace', async () => {
+    render(<CreateCategory />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Category 1')).toBeInTheDocument();
+    });
+
+    const input = screen.getByTestId('create-category-input');
+    const submitButton = screen.getByText('Submit');
+
+    // Try to submit with whitespace only
+    fireEvent.change(input, { target: { value: '   ' } });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(axios.post).not.toHaveBeenCalled();
+      expect(toast.error).toHaveBeenCalledWith('Category name cannot be empty');
+    });
+  });
+
+  test('prevents updating a category to empty name', async () => {
+    render(<CreateCategory />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Category 1')).toBeInTheDocument();
+    });
+
+    const editButtons = screen.getAllByText('Edit');
+    fireEvent.click(editButtons[0]); // Edit Category 1
+
+    const modalInput = screen.getByTestId('update-category-input');
+    const updateForm = screen.getByTestId('update-category-form');
+
+    // Try to update to empty name
+    fireEvent.change(modalInput, { target: { value: '' } });
+    fireEvent.submit(updateForm);
+
+    await waitFor(() => {
+      expect(axios.put).not.toHaveBeenCalled();
+      expect(toast.error).toHaveBeenCalledWith('Category name cannot be empty');
+      expect(modalInput.value).toBe('Category 1'); // Should reset to original name
+    });
+  });
+
+  test('prevents updating a category to whitespace only', async () => {
+    render(<CreateCategory />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Category 1')).toBeInTheDocument();
+    });
+
+    const editButtons = screen.getAllByText('Edit');
+    fireEvent.click(editButtons[0]); // Edit Category 1
+
+    const modalInput = screen.getByTestId('update-category-input');
+    const updateForm = screen.getByTestId('update-category-form');
+
+    // Try to update to whitespace only
+    fireEvent.change(modalInput, { target: { value: '   ' } });
+    fireEvent.submit(updateForm);
+
+    await waitFor(() => {
+      expect(axios.put).not.toHaveBeenCalled();
+      expect(toast.error).toHaveBeenCalledWith('Category name cannot be empty');
+      expect(modalInput.value).toBe('Category 1'); // Should reset to original name
     });
   });
 });

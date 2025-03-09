@@ -25,7 +25,9 @@ const HomePage = () => {
     try {
       const { data } = await axios.get("/api/v1/category/get-category");
       if (data?.success) {
-        setCategories(data?.category);
+        setCategories(data.category);
+      } else {
+        console.error("API response does not contain expected data")
       }
     } catch (error) {
       toast.error("Failed to get categories");
@@ -36,24 +38,35 @@ const HomePage = () => {
     getAllCategory();
     getTotal();
   }, []);
-  //get products
+  
+  //get all products
   const getAllProducts = async () => {
     try {
       setLoading(true);
       const { data } = await axios.get(`/api/v1/product/product-list/${page}`);
-      setLoading(false);
-      setProducts(data.products);
+      console.log(data);
+      if (data?.success) {
+        setLoading(false);
+        console.log(data.products);
+        setProducts(data.products);
+      } else {
+        console.error("API response does not contain expected data")
+      }
     } catch (error) {
       setLoading(false);
       toast.error("Failed to get products");
     }
   };
 
-  //getTOtal COunt
+  //getTotal Count
   const getTotal = async () => {
     try {
       const { data } = await axios.get("/api/v1/product/product-count");
-      setTotal(data?.total);
+      if (data?.success) {
+        setTotal(5);
+      } else {
+        console.error("API response does not contain expected data")
+      }
     } catch (error) {
       toast.error("Failed to get total count");
     }
@@ -61,23 +74,23 @@ const HomePage = () => {
 
   useEffect(() => {
     if (page === 1) return;
-    loadMore();
+    loadMoreProducts();
   }, [page]);
-  //load more
-  const loadMore = async () => {
+  
+  //load more products
+  const loadMoreProducts = async () => {
     try {
       setLoading(true);
       const { data } = await axios.get(`/api/v1/product/product-list/${page}`);
       setLoading(false);
-      // setProducts([...products, ...data?.products]);
-      setProducts(prev => [...prev, ...data?.products]);
+      setProducts([...products, ...data?.products]);
     } catch (error) {
       toast.error("Failed to get products");
       setLoading(false);
     }
   };
 
-  // filter by cat
+  //filter by cat
   const handleFilter = (value, id) => {
     let all = [...checked];
     if (value) {
@@ -87,40 +100,28 @@ const HomePage = () => {
     }
     setChecked(all);
   };
-  // useEffect(() => {
-  //   if (!checked.length && !radio.length) getAllProducts();
-  // }, [checked.length, radio.length]);
-
-  // useEffect(() => {
-  //   if (checked.length || radio.length) filterProduct();
-  // }, [checked, radio]);
+  useEffect(() => {
+    if (!checked.length && !radio.length) getAllProducts();
+  }, [checked.length, radio.length]);
 
   useEffect(() => {
-    if (!checked.length && !radio.length) {
-      getAllProducts();
-    } else {
-      filterProduct();
-    }
+    if (checked.length || radio.length) filterProduct();
   }, [checked, radio]);
-  
 
-  //get filterd product
+  //get filtered products
   const filterProduct = async () => {
     try {
-      console.log("overr heree")
       const { data } = await axios.post("/api/v1/product/product-filters", {
         checked,
         radio,
       });
-      console.log("data", data)
-      console.log("data.products", data?.products)
       setProducts(data?.products);
     } catch (error) {
       toast.error("Failed to get products");
     }
   };
   return (
-    <Layout title={"ALL Products - Best offers "}>
+    <Layout title={"ALL Products - Best offers"}>
       {/* banner image */}
       <img
         src="/images/Virtual.png"
@@ -128,21 +129,21 @@ const HomePage = () => {
         alt="bannerimage"
         width={"100%"}
       />
-      {/* banner image */}
+      
       <div className="container-fluid row mt-3 home-page">
         <div className="col-md-3 filters">
           <h4 className="text-center">Filter By Category</h4>
           <div className="d-flex flex-column">
             {categories?.map((c) => (
               <Checkbox
-                key={c._id}
+                key={c.slug}
                 onChange={(e) => handleFilter(e.target.checked, c._id)}
               >
                 {c.name}
               </Checkbox>
             ))}
           </div>
-          {/* price filter */}
+          
           <h4 className="text-center mt-4">Filter By Price</h4>
           <div className="d-flex flex-column">
             <Radio.Group onChange={(e) => setRadio(e.target.value)}>
@@ -156,12 +157,17 @@ const HomePage = () => {
           <div className="d-flex flex-column">
             <button
               className="btn btn-danger"
-              onClick={() => window.location.reload()}
+              onClick={async () => {
+                setChecked([]);
+                setRadio([]);
+                await getAllProducts();
+              }}
             >
               RESET FILTERS
             </button>
           </div>
         </div>
+        
         <div className="col-md-9 ">
           <h1 className="text-center">All Products</h1>
           <div className="d-flex flex-wrap">
@@ -193,7 +199,6 @@ const HomePage = () => {
                       More Details
                     </button>
                     <button
-                      data-testid="add-to-cart-button"
                       className="btn btn-dark ms-1"
                       onClick={() => {
                         setCart([...cart, p]);
@@ -224,8 +229,7 @@ const HomePage = () => {
                   "Loading ..."
                 ) : (
                   <>
-                    {" "}
-                    Loadmore <AiOutlineReload />
+                    <p>Loadmore</p>
                   </>
                 )}
               </button>

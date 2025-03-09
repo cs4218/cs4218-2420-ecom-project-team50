@@ -593,7 +593,129 @@ describe("HomePage Component", () => {
     expect(screen.getByText("Filter By Category")).toBeInTheDocument();
   });
 
-  it("should handle product filters when both category and price filters are active", async () => {
+  // Test Case 1: Apply category filter only
+  it("should filter products by category", async () => {
+    axios.get.mockReset();
+    axios.post.mockReset();
+    
+    // Mock categories data
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        message: "All Categories List",
+        category: sampleCategories,
+      },
+    });
+    
+    // Mock products data
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: sampleProducts,
+      },
+    });
+    
+    // Mock count data
+    axios.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        total: 2
+      }
+    });
+    
+    // Mock filtered products by category
+    axios.post.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: [sampleProducts[0]],
+      },
+    });
+
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    // Wait for categories to load
+    await waitFor(() => {
+      expect(screen.getByText("Electronics")).toBeInTheDocument();
+    });
+    
+    // Apply category filter
+    fireEvent.click(screen.getByRole("checkbox", { name: "Electronics" }));
+    
+    // Verify filter API was called with correct category
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalledWith(
+        "/api/v1/product/product-filters",
+        expect.objectContaining({
+          checked: expect.arrayContaining(["electronics-category-id"]),
+          radio: []
+        })
+      );
+    });
+  });
+
+  // Test Case 2: Apply price filter only
+  it("should filter products by price range", async () => {
+    axios.get.mockReset();
+    axios.post.mockReset();
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        message: "All Categories List",
+        category: sampleCategories,
+      },
+    });
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: sampleProducts,
+      },
+    });
+    
+    axios.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        total: 2
+      }
+    });
+    
+    axios.post.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: [sampleProducts[1]], // Only one product in this price range
+      },
+    });
+
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Filter By Price")).toBeInTheDocument();
+    });
+    
+    fireEvent.click(screen.getByLabelText("$40 to 59"));
+    
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalledWith(
+        "/api/v1/product/product-filters",
+        expect.objectContaining({
+          checked: [],
+          radio: expect.anything()
+        })
+      );
+    });
+  });
+
+  // Test Case 3: Apply both category and price filters
+  it("should apply both category and price filters together", async () => {
     axios.get.mockReset();
     axios.post.mockReset();
     
@@ -667,4 +789,155 @@ describe("HomePage Component", () => {
       );
     });
   });
+
+  // Test Case 4: Apply multiple category filters
+  it("should handle multiple category filters", async () => {
+    axios.get.mockReset();
+    axios.post.mockReset();
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        message: "All Categories List",
+        category: [
+          ...sampleCategories,
+          { name: "Books", slug: "books", _id: "books-category-id" }
+        ],
+      },
+    });
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: sampleProducts,
+      },
+    });
+    
+    axios.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        total: 2
+      }
+    });
+    
+    axios.post.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: [sampleProducts[0]],
+      },
+    });
+    
+    axios.post.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: sampleProducts,
+      },
+    });
+
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Electronics")).toBeInTheDocument();
+      expect(screen.getByText("Books")).toBeInTheDocument();
+    });
+    
+    fireEvent.click(screen.getByRole("checkbox", { name: "Electronics" }));
+    
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalledWith(
+        "/api/v1/product/product-filters",
+        expect.objectContaining({
+          checked: expect.arrayContaining(["electronics-category-id"]),
+          radio: []
+        })
+      );
+    });
+    
+    fireEvent.click(screen.getByRole("checkbox", { name: "Books" }));
+    
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalledWith(
+        "/api/v1/product/product-filters",
+        expect.objectContaining({
+          checked: expect.arrayContaining(["electronics-category-id", "books-category-id"]),
+          radio: []
+        })
+      );
+    });
+  });
+
+  // Test Case 5: Remove a category filter
+  it("should remove a category filter when unchecking box", async () => {
+    axios.get.mockReset();
+    axios.post.mockReset();
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        message: "All Categories List",
+        category: sampleCategories,
+      },
+    });
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: sampleProducts,
+      },
+    });
+    
+    axios.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        total: 2
+      }
+    });
+    
+    axios.post.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: [sampleProducts[0]],
+      },
+    });
+    
+    axios.get.mockResolvedValueOnce({ 
+      data: { 
+        success: true,
+        products: sampleProducts,
+      },
+    });
+
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Electronics")).toBeInTheDocument();
+    });
+    
+    fireEvent.click(screen.getByRole("checkbox", { name: "Electronics" }));
+    
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalledWith(
+        "/api/v1/product/product-filters",
+        expect.objectContaining({
+          checked: expect.arrayContaining(["electronics-category-id"]),
+          radio: []
+        })
+      );
+    });
+    
+    fireEvent.click(screen.getByRole("checkbox", { name: "Electronics" }));
+    
+    await waitFor(() => {
+      expect(axios.get).toHaveBeenCalledWith("/api/v1/product/product-list/1");
+    });
+  });
+
 });

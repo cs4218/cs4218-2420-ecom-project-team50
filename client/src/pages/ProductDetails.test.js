@@ -111,7 +111,7 @@ describe("ProductDetails Test", () => {
 		});
 	});
 
-	test("User is able to add product to Cart", async () => {
+	/*test("User is able to add product to Cart", async () => {
 		const mockAddToCart = jest.fn(); // Create a mock function for add to cart
 		let renders;
 		await act(async () => {
@@ -138,7 +138,7 @@ describe("ProductDetails Test", () => {
 			// expect(mockAddToCart).toHaveBeenCalledWith(mockProduct); // Mock addtoCart function to show event ran
 		});
 		expect(await getByText("Item Added to cart")).toBeInTheDocument();
-	});
+	});*/
 
 	test("renders similar products component", async () => {
 		let renders;

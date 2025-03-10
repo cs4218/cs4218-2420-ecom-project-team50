@@ -27,7 +27,7 @@ const CreateProduct = () => {
       }
     } catch (error) {
       console.log(error);
-      toast.error("Something wwent wrong in getting catgeory");
+      toast.error("Something went wrong in getting category");
     }
   };
 
@@ -35,26 +35,47 @@ const CreateProduct = () => {
     getAllCategory();
   }, []);
 
+  const resetForm = () => {
+    setName("");
+    setDescription("");
+    setPrice("");
+    setQuantity("");
+    setCategory("");
+    setShipping("");
+    setPhoto("");
+  };
+
   //create product function
   const handleCreate = async (e) => {
     e.preventDefault();
+    if (!name || !description || !price || !quantity || !category) {
+      toast.error("Name, Description, Price, Quantity and Category is required");
+      return;
+    }
     try {
       const productData = new FormData();
       productData.append("name", name);
       productData.append("description", description);
       productData.append("price", price);
       productData.append("quantity", quantity);
-      productData.append("photo", photo);
+      photo && productData.append("photo", photo);
       productData.append("category", category);
-      const { data } = axios.post(
+      if (shipping === "1") {
+        productData.append("shipping", true);
+      }
+      if (shipping === "0") {
+        productData.append("shipping", false);
+      }
+      const { data } = await axios.post(
         "/api/v1/product/create-product",
         productData
       );
       if (data?.success) {
-        toast.error(data?.message);
-      } else {
+        resetForm();
         toast.success("Product Created Successfully");
         navigate("/dashboard/admin/products");
+      } else {
+        toast.error(data?.message);
       }
     } catch (error) {
       console.log(error);
@@ -73,11 +94,12 @@ const CreateProduct = () => {
             <h1>Create Product</h1>
             <div className="m-1 w-75">
               <Select
-                bordered={false}
+                variant="outline"
                 placeholder="Select a category"
                 size="large"
                 showSearch
                 className="form-select mb-3"
+                data-testid="select-category"
                 onChange={(value) => {
                   setCategory(value);
                 }}
@@ -151,9 +173,10 @@ const CreateProduct = () => {
               </div>
               <div className="mb-3">
                 <Select
-                  bordered={false}
+                  variant="outline"
                   placeholder="Select Shipping "
                   size="large"
+                  data-testid="select-shipping"
                   showSearch
                   className="form-select mb-3"
                   onChange={(value) => {

@@ -6,20 +6,19 @@ import '@testing-library/jest-dom/extend-expect';
 import toast from 'react-hot-toast';
 import Login from './Login';
 
-// Mocking axios.post
 jest.mock('axios');
 jest.mock('react-hot-toast');
 
 jest.mock('../../context/auth', () => ({
-    useAuth: jest.fn(() => [null, jest.fn()]) // Mock useAuth hook to return null state and a mock function for setAuth
+    useAuth: jest.fn(() => [null, jest.fn()]) 
   }));
 
   jest.mock('../../context/cart', () => ({
-    useCart: jest.fn(() => [null, jest.fn()]) // Mock useCart hook to return null state and a mock function
+    useCart: jest.fn(() => [null, jest.fn()]) 
   }));
     
 jest.mock('../../context/search', () => ({
-    useSearch: jest.fn(() => [{ keyword: '' }, jest.fn()]) // Mock useSearch hook to return null state and a mock function
+    useSearch: jest.fn(() => [{ keyword: '' }, jest.fn()]) 
   }));  
 
 jest.mock("../../hooks/useCategory", () => jest.fn(() => []));
@@ -137,4 +136,136 @@ describe('Login Component', () => {
         await waitFor(() => expect(axios.post).toHaveBeenCalled());
         expect(toast.error).toHaveBeenCalledWith('Something went wrong');
     });
+
+  it('should handle successful login with undefined message', async () => {
+    // Mock response with success true but no message
+    axios.post.mockResolvedValueOnce({
+      data: {
+        success: true,
+        user: { id: 1, name: 'John Doe', email: 'test@example.com' },
+        token: 'mockToken',
+        // No message property intentionally
+      }
+    });
+
+    const { getByPlaceholderText, getByText } = render(
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    fireEvent.change(getByPlaceholderText('Enter Your Email'), { target: { value: 'test@example.com' } });
+    fireEvent.change(getByPlaceholderText('Enter Your Password'), { target: { value: 'password123' } });
+    fireEvent.click(getByText('LOGIN'));
+
+    await waitFor(() => expect(axios.post).toHaveBeenCalled());
+    
+    // Toast should be called with undefined message
+    expect(toast.success).toHaveBeenCalledWith(undefined, {
+      duration: 5000,
+      icon: '🙏',
+      style: {
+        background: 'green',
+        color: 'white'
+      }
+    });
+    
+    // Verify localStorage was called to store auth
+    expect(window.localStorage.setItem).toHaveBeenCalledWith(
+      'auth',
+      expect.any(String)
+    );
+  });
+
+  it('should display error message from response data', async () => {
+    axios.post.mockResolvedValueOnce({
+      data: {
+        success: false,
+        message: 'Invalid credentials'
+      }
+    });
+
+    const { getByPlaceholderText, getByText } = render(
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    fireEvent.change(getByPlaceholderText('Enter Your Email'), { target: { value: 'wrong@example.com' } });
+    fireEvent.change(getByPlaceholderText('Enter Your Password'), { target: { value: 'wrongpassword' } });
+    fireEvent.click(getByText('LOGIN'));
+
+    await waitFor(() => expect(axios.post).toHaveBeenCalled());
+    
+    expect(toast.error).toHaveBeenCalledWith('Invalid credentials');
+  });
+
+  it('should have a forgot password button that can be clicked', () => {
+    const { getByText } = render(
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const forgotPasswordBtn = getByText('Forgot Password');
+    expect(forgotPasswordBtn).toBeInTheDocument();
+    
+    fireEvent.click(forgotPasswordBtn);
+  });
+
+  it('should handle network errors properly', async () => {
+    const originalConsoleLog = console.log;
+    console.log = jest.fn();
+    
+    axios.post.mockImplementationOnce(() => {
+      throw new Error('Network Error');
+    });
+
+    const { getByPlaceholderText, getByText } = render(
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    fireEvent.change(getByPlaceholderText('Enter Your Email'), { target: { value: 'test@example.com' } });
+    fireEvent.change(getByPlaceholderText('Enter Your Password'), { target: { value: 'password123' } });
+    fireEvent.click(getByText('LOGIN'));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Something went wrong');
+    });
+    
+    expect(console.log).toHaveBeenCalled();
+    
+    console.log = originalConsoleLog;
+  });
+
+  it('should render the login form with the correct layout and title', () => {
+    const { getByText, container } = render(
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const formContainer = container.querySelector('.form-container');
+    expect(formContainer).toBeInTheDocument();
+    expect(formContainer).toHaveStyle({ minHeight: '90vh' });
+    
+    expect(getByText('LOGIN FORM')).toHaveClass('title');
+    
+    const loginButton = getByText('LOGIN');
+    expect(loginButton).toHaveClass('btn');
+    expect(loginButton).toHaveClass('btn-primary');
+  });
+  
 });

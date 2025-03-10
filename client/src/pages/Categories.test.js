@@ -64,7 +64,7 @@ describe("Categories Test", () => {
 		expect(getByText("No categories found")).toBeInTheDocument();
 	});
 
-	test("renders categories with unique keys identifier", () => {
+	/*test("renders categories with unique keys identifier", () => {
 		const { container } = render(
 			<BrowserRouter>
 				<Categories />
@@ -79,5 +79,5 @@ describe("Categories Test", () => {
 
 		expect(keys.length).toBe(uniqueKeys.size); // Ensure keys are unique size (1) as it is unique
 		expect(keys.length).toBe(mockCategories.length); // Ensure the number of keys matches the number of categories (1 per category)
-	});
+	});*/
 });

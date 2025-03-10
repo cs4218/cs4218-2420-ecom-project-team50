@@ -79,7 +79,7 @@ describe("Category Controller", () => {
 
 		await createCategoryController(mockReq, mockRes);
 
-		expect(spy).toHaveBeenCalledWith(expect.stringContaining("Database error"));
+		expect(spy).toHaveBeenCalledWith(Error("Database error"));
 
 		// Verify response for error handling
 		expect(mockRes.status).toHaveBeenCalledWith(500);

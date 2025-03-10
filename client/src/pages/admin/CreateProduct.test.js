@@ -6,33 +6,33 @@ import "@testing-library/jest-dom/extend-expect";
 import toast from "react-hot-toast";
 import CreateProduct from "./CreateProduct";
 
-// Mocking dependent modules
+
 jest.mock("axios");
 jest.mock("react-hot-toast");
 
-// Mock navigate function
+
 const mockNavigate = jest.fn();
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useNavigate: () => mockNavigate,
 }));
 
-// Mock contexts and hooks
+
 jest.mock('../../context/auth', () => ({
-  useAuth: jest.fn(() => [null, jest.fn()]) // Mock useAuth hook
+  useAuth: jest.fn(() => [null, jest.fn()]) 
 }));
 
 jest.mock('../../context/cart', () => ({
-  useCart: jest.fn(() => [null, jest.fn()]) // Mock useCart hook
+  useCart: jest.fn(() => [null, jest.fn()]) 
 }));
 
 jest.mock('../../context/search', () => ({
-  useSearch: jest.fn(() => [{ keyword: '' }, jest.fn()]) // Mock useSearch hook
+  useSearch: jest.fn(() => [{ keyword: '' }, jest.fn()]) 
 }));
 
 jest.mock("../../hooks/useCategory", () => jest.fn(() => []));
 
-// Mock URL.createObjectURL
+
 global.URL.createObjectURL = jest.fn(() => "mocked-object-url");
 
 jest.mock("antd", () => ({
@@ -81,7 +81,6 @@ describe("CreateProduct Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Set up default axios mocks
     axios.get.mockResolvedValue({
       data: {
         success: true,
@@ -97,10 +96,8 @@ describe("CreateProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Wait for categories to load
     await waitFor(() => expect(axios.get).toHaveBeenCalled());
 
-    // Check for key elements - use more specific selectors to avoid ambiguity
     expect(screen.getByPlaceholderText("write a name")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("write a description")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("write a Price")).toBeInTheDocument();
@@ -118,10 +115,8 @@ describe("CreateProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Wait for component to fully load
     await waitFor(() => expect(axios.get).toHaveBeenCalled());
 
-    // Interact with form inputs
     fireEvent.change(screen.getByPlaceholderText("write a name"), {
       target: { value: "Test Product" }
     });
@@ -138,7 +133,6 @@ describe("CreateProduct Component", () => {
       target: { value: "10" }
     });
 
-    // Verify values were stored
     expect(screen.getByPlaceholderText("write a name").value).toBe("Test Product");
     expect(screen.getByPlaceholderText("write a description").value).toBe("This is a test product description");
     expect(screen.getByPlaceholderText("write a Price").value).toBe("99.99");
@@ -146,7 +140,7 @@ describe("CreateProduct Component", () => {
   });
 
   it("should show validation error when required fields are missing", async () => {
-    // Clear previous mock implementations
+    
     jest.clearAllMocks();
 
     render(
@@ -155,14 +149,14 @@ describe("CreateProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Wait for component to load
+    
     await waitFor(() => expect(axios.get).toHaveBeenCalled());
 
-    // Try to create product without filling required fields
+    
     fireEvent.click(screen.getByText("CREATE PRODUCT"));
 
-    // Check for the exact validation error message that your component is actually using
-    // Update the expected message to match what your component actually shows
+    
+    
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith(
         "Name, Description, Price, Quantity and Category is required"
@@ -171,7 +165,7 @@ describe("CreateProduct Component", () => {
   });
 
   it("should handle successful product creation", async () => {
-    // Mock successful API response for product creation
+    
     axios.post.mockResolvedValueOnce({
       data: {
         success: true,
@@ -185,10 +179,10 @@ describe("CreateProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Wait for categories to load
+    
     await waitFor(() => expect(axios.get).toHaveBeenCalled());
 
-    // Fill in the form
+    
     fireEvent.change(screen.getByPlaceholderText("write a name"), {
       target: { value: "New Product" }
     });
@@ -215,7 +209,7 @@ describe("CreateProduct Component", () => {
 
     fireEvent.click(screen.getByText("CREATE PRODUCT"));
 
-    // Wait for the POST request and success message
+    
     await waitFor(() => {
       expect(axios.post).toHaveBeenCalled();
       expect(toast.success).toHaveBeenCalledWith("Product Created Successfully");
@@ -224,7 +218,7 @@ describe("CreateProduct Component", () => {
   });
 
   it("should handle API error during product creation", async () => {
-    // Mock API error
+    
     axios.post.mockRejectedValue({ message: "Server error" });
 
     const { getByRole, getByPlaceholderText, getByText, getByTestId } = render(
@@ -233,10 +227,10 @@ describe("CreateProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Wait for categories to load
+    
     await waitFor(() => expect(axios.get).toHaveBeenCalled());
 
-    // Fill in all required fields
+    
     fireEvent.change(screen.getByPlaceholderText("write a name"), {
       target: { value: "Test Product" }
     });
@@ -261,25 +255,25 @@ describe("CreateProduct Component", () => {
     fireEvent.change(shippingSelect, { target: { value: "0" } });
     expect(shippingSelect).toHaveValue("0");
 
-    // Trigger create action
+    
     fireEvent.click(screen.getByText("CREATE PRODUCT"));
 
-    // Wait for the axios post to be called
+    
     await waitFor(() => {
       expect(axios.post).toHaveBeenCalled();
     });
 
-    // Check for the exact error message your component is showing
+    
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("something went wrong");
     });
   });
 
   it("should handle category fetch error", async () => {
-    // Clear previous mock implementations
+    
     jest.clearAllMocks();
 
-    // Override the axios.get mock to simulate a category fetch error
+    
     axios.get.mockRejectedValueOnce({ message: "Failed to fetch categories" });
 
     render(
@@ -288,7 +282,7 @@ describe("CreateProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Wait for the API call to complete
+    
     await waitFor(() => {
       expect(axios.get).toHaveBeenCalled();
       expect(toast.error).toHaveBeenCalledWith("Something went wrong in getting category");
@@ -302,30 +296,30 @@ describe("CreateProduct Component", () => {
       </MemoryRouter>
     );
   
-    // Wait for component to fully load
+    
     await waitFor(() => expect(axios.get).toHaveBeenCalled());
   
-    // Create a mock file
+    
     const file = new File(['dummy content'], 'test-image.png', { type: 'image/png' });
     
-    // Get the file input directly from the container
+    
     const fileInput = container.querySelector('input[type="file"]');
     
-    // Simulate file selection
+    
     fireEvent.change(fileInput, { target: { files: [file] } });
   
-    // Check that the image preview is shown
+    
     const previewImage = await screen.findByAltText('product_photo');
     expect(previewImage).toBeInTheDocument();
     expect(URL.createObjectURL).toHaveBeenCalledWith(file);
     expect(previewImage).toHaveAttribute('src', 'mocked-object-url');
   
-    // Check if the label now shows the file name
+    
     expect(screen.getByText('test-image.png')).toBeInTheDocument();
   });
   
   it("should handle API response with success=false", async () => {
-    // Mock API response with success=false
+    
     axios.post.mockResolvedValueOnce({
       data: {
         success: false,
@@ -339,10 +333,10 @@ describe("CreateProduct Component", () => {
       </MemoryRouter>
     );
   
-    // Wait for component to fully load
+    
     await waitFor(() => expect(axios.get).toHaveBeenCalled());
   
-    // Fill in all required fields
+    
     fireEvent.change(screen.getByPlaceholderText("write a name"), {
       target: { value: "Test Product" }
     });
@@ -359,28 +353,28 @@ describe("CreateProduct Component", () => {
       target: { value: "10" }
     });
   
-    // Select a category
+    
     const categorySelect = screen.getByTestId("select-category");
     fireEvent.change(categorySelect, { target: { value: "2" } });
   
-    // Select shipping option
+    
     const shippingSelect = screen.getByTestId("select-shipping");
     fireEvent.change(shippingSelect, { target: { value: "0" } });
   
-    // Trigger create action
+    
     fireEvent.click(screen.getByText("CREATE PRODUCT"));
   
-    // Wait for the axios post to be called
+    
     await waitFor(() => {
       expect(axios.post).toHaveBeenCalled();
     });
   
-    // Check for the error message from the API response
+    
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Product name already exists");
     });
   
-    // Verify that the form was not reset and navigation didn't happen
+    
     expect(mockNavigate).not.toHaveBeenCalled();
     expect(screen.getByPlaceholderText("write a name").value).toBe("Test Product");
   });

@@ -86,7 +86,6 @@ describe("UpdateProduct Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Set up default axios mocks
     axios.get.mockImplementation((url) => {
       if (url.includes("/api/v1/category/get-category")) {
         return Promise.resolve({
@@ -159,7 +158,6 @@ describe("UpdateProduct Component", () => {
   });
 
   it("should handle case when product is not found", async () => {
-    // Mock product not found response
     axios.get.mockImplementation((url) => {
       if (url.includes("/api/v1/product/get-product/")) {
         return Promise.resolve({
@@ -189,7 +187,6 @@ describe("UpdateProduct Component", () => {
   });
 
   it("should handle category fetch error", async () => {
-    // Override the category fetch mock to simulate an error
     axios.get.mockImplementation((url) => {
       if (url.includes("/api/v1/category/get-category")) {
         return Promise.reject(new Error("Failed to fetch categories"));
@@ -220,10 +217,8 @@ describe("UpdateProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Wait for component to fully load with data
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(3));
 
-    // Change form input values
     fireEvent.change(screen.getByPlaceholderText("write a name"), {
       target: { value: "Updated Product Name" }
     });
@@ -240,7 +235,6 @@ describe("UpdateProduct Component", () => {
       target: { value: "20" }
     });
 
-    // Verify values were updated
     expect(screen.getByPlaceholderText("write a name").value).toBe("Updated Product Name");
     expect(screen.getByPlaceholderText("write a description").value).toBe("Updated product description");
     expect(screen.getByPlaceholderText("write a Price").value).toBe("199.99");
@@ -254,10 +248,8 @@ describe("UpdateProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Wait for component to load data
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(3));
 
-    // Clear required fields
     fireEvent.change(screen.getByPlaceholderText("write a name"), {
       target: { value: "" }
     });
@@ -266,10 +258,8 @@ describe("UpdateProduct Component", () => {
       target: { value: "" }
     });
 
-    // Try to update product with missing fields
     fireEvent.click(screen.getByText("UPDATE PRODUCT"));
 
-    // Check for validation error
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith(
         "Name, Description, Price, Quantity and Category is required"
@@ -278,7 +268,6 @@ describe("UpdateProduct Component", () => {
   });
 
   it("should handle successful product update", async () => {
-    // Mock successful API response for product update
     axios.put.mockResolvedValueOnce({
       data: {
         success: true,
@@ -292,25 +281,20 @@ describe("UpdateProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Wait for component to load data
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(3));
 
-    // Update a field
     fireEvent.change(screen.getByPlaceholderText("write a name"), {
       target: { value: "Updated Product Name" }
     });
 
-    // Select different shipping option
     const shippingSelect = screen.getByTestId("select-shipping");
     fireEvent.change(shippingSelect, { target: { value: "0" } });
 
     const categorySelect = screen.getByTestId("select-category");
     fireEvent.change(categorySelect, { target: { value: "1" } });
 
-    // Trigger update action
     fireEvent.click(screen.getByText("UPDATE PRODUCT"));
 
-    // Wait for the PUT request and success message
     await waitFor(() => {
       expect(axios.put).toHaveBeenCalled();
       expect(toast.success).toHaveBeenCalledWith("Product Updated Successfully");
@@ -319,7 +303,6 @@ describe("UpdateProduct Component", () => {
   });
 
   it("should handle API error during product update", async () => {
-    // Mock API error for update
     axios.put.mockRejectedValue(new Error("Server error"));
 
     render(
@@ -328,7 +311,6 @@ describe("UpdateProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Wait for component to load data
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(3));
 
     await waitFor(() => {
@@ -338,10 +320,8 @@ describe("UpdateProduct Component", () => {
       expect(screen.getByPlaceholderText("write a quantity").value).toBe("10");
     });
 
-    // Trigger update action
     fireEvent.click(screen.getByText("UPDATE PRODUCT"));
 
-    // Check for error message
     await waitFor(() => {
       expect(axios.put).toHaveBeenCalled();
       expect(toast.error).toHaveBeenCalledWith("something went wrong");
@@ -349,7 +329,6 @@ describe("UpdateProduct Component", () => {
   });
 
   it("should handle failed update response", async () => {
-    // Mock API response with success=false
     axios.put.mockResolvedValueOnce({
       data: {
         success: false,
@@ -363,24 +342,19 @@ describe("UpdateProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Wait for component to load data
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(3));
 
-    // Update a field
     fireEvent.change(screen.getByPlaceholderText("write a name"), {
       target: { value: "Existing Product Name" }
     });
 
-    // Trigger update action
     fireEvent.click(screen.getByText("UPDATE PRODUCT"));
 
-    // Check for the error message from the API response
     await waitFor(() => {
       expect(axios.put).toHaveBeenCalled();
       expect(toast.error).toHaveBeenCalledWith("Product with this name already exists");
     });
 
-    // Verify that navigation didn't happen
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
@@ -391,29 +365,21 @@ describe("UpdateProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Wait for component to fully load with data
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(3));
 
-    // Create a mock file
     const file = new File(['dummy content'], 'new-product-image.png', { type: 'image/png' });
 
-    // Get the file input
     const fileInput = container.querySelector('input[type="file"]');
 
-    // Simulate file selection
     fireEvent.change(fileInput, { target: { files: [file] } });
 
-    // Check that the upload label now shows the file name
     expect(screen.getByText('new-product-image.png')).toBeInTheDocument();
 
-    // Check that the image preview uses the new file
     const images = screen.getAllByAltText('product_photo');
-    // The first image should be from the newly selected file
     expect(images[0]).toHaveAttribute('src', 'mocked-object-url');
   });
 
   it("should handle successful product delete", async () => {
-    // Mock successful API response for product delete
     axios.delete.mockResolvedValueOnce({
       data: {
         success: true,
@@ -421,7 +387,6 @@ describe("UpdateProduct Component", () => {
       }
     });
 
-    // Mock confirmation to be true
     window.confirm.mockImplementationOnce(() => true);
 
     render(
@@ -430,16 +395,12 @@ describe("UpdateProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Wait for component to load data
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(3));
 
-    // Trigger delete action
     fireEvent.click(screen.getByText("DELETE PRODUCT"));
 
-    // Check that confirmation was requested
     expect(window.confirm).toHaveBeenCalledWith("Are you sure you want to delete this product?");
 
-    // Wait for the DELETE request and success message
     await waitFor(() => {
       expect(axios.delete).toHaveBeenCalled();
       expect(toast.success).toHaveBeenCalledWith("Product Deleted Successfully");
@@ -448,7 +409,6 @@ describe("UpdateProduct Component", () => {
   });
 
   it("should not delete product when user cancels confirmation", async () => {
-    // Mock confirmation to be false (user cancels)
     window.confirm.mockImplementationOnce(() => false);
 
     render(
@@ -457,24 +417,18 @@ describe("UpdateProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Wait for component to load data
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(3));
 
-    // Trigger delete action
     fireEvent.click(screen.getByText("DELETE PRODUCT"));
 
-    // Check that confirmation was requested
     expect(window.confirm).toHaveBeenCalledWith("Are you sure you want to delete this product?");
 
-    // Verify delete request was not made
     expect(axios.delete).not.toHaveBeenCalled();
   });
 
   it("should handle API error during product delete", async () => {
-    // Mock API error for delete
     axios.delete.mockRejectedValue(new Error("Server error"));
 
-    // Mock confirmation to be true
     window.confirm.mockImplementationOnce(() => true);
 
     render(
@@ -483,13 +437,10 @@ describe("UpdateProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Wait for component to load data
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(3));
 
-    // Trigger delete action
     fireEvent.click(screen.getByText("DELETE PRODUCT"));
 
-    // Check for error message
     await waitFor(() => {
       expect(axios.delete).toHaveBeenCalled();
       expect(toast.error).toHaveBeenCalledWith("Something went wrong");
@@ -497,7 +448,6 @@ describe("UpdateProduct Component", () => {
   });
 
   it("should handle failed delete response", async () => {
-    // Mock API response with success=false
     axios.delete.mockResolvedValueOnce({
       data: {
         success: false,
@@ -505,7 +455,6 @@ describe("UpdateProduct Component", () => {
       }
     });
 
-    // Mock confirmation to be true
     window.confirm.mockImplementationOnce(() => true);
 
     render(
@@ -514,19 +463,15 @@ describe("UpdateProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Wait for component to load data
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(3));
 
-    // Trigger delete action
     fireEvent.click(screen.getByText("DELETE PRODUCT"));
 
-    // Check for the error message from the API response
     await waitFor(() => {
       expect(axios.delete).toHaveBeenCalled();
       expect(toast.error).toHaveBeenCalledWith("Cannot delete product with active orders");
     });
 
-    // Verify that navigation didn't happen
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 });

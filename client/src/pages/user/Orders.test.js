@@ -266,10 +266,9 @@ describe('Orders Component', () => {
       expect(screen.getByText('Jane Smith')).toBeInTheDocument();
     });
 
-    // Check that order numbers are displayed correctly
     const orderNumbers = screen.getAllByRole('cell', { name: /^[0-9]+$/ });
     expect(orderNumbers[0]).toHaveTextContent('1');
-    expect(orderNumbers[orderNumbers.length - 2]).toHaveTextContent('2'); // Adjusted for table structure
+    expect(orderNumbers[orderNumbers.length - 2]).toHaveTextContent('2');
   });
 
   it('handles orders with failed payments', async () => {
@@ -325,7 +324,7 @@ describe('Orders Component', () => {
         _id: '1',
         status: 'Processing',
         buyer: { name: 'John Doe' },
-        createdAt: '2023-01-01T00:00:00.000Z', // Specific date for testing
+        createdAt: '2023-01-01T00:00:00.000Z',
         payment: { success: true },
         products: []
       }
@@ -384,10 +383,8 @@ describe('Orders Component', () => {
       expect(axios.get).toHaveBeenCalled();
     });
 
-    // Component should render without crashing
     expect(screen.getByText('All Orders')).toBeInTheDocument();
     
-    // Check that the component handles undefined values gracefully
     await waitFor(() => {
       const cells = screen.getAllByRole('cell');
       expect(cells.length).toBeGreaterThan(0);

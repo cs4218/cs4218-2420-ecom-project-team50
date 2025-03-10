@@ -55,6 +55,7 @@ describe('Search Component', () => {
         price: 149.99
       }
     ];
+    
 
     const mockValues = {
       results: mockProducts

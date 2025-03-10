@@ -1,74 +1,27 @@
-name: Backend Test Workflow
+name: Run Tests
 
 on:
-  push:
-    branches: [ main, master ]
   pull_request:
-    branches: [ main, master ]
-
+    branches:
+      - main
+  push:
+    branches:
+      - main
 jobs:
   test:
     runs-on: ubuntu-latest
-    
     steps:
-      - uses: actions/checkout@v3
-      
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
-          cache: 'npm'
-          
+          node-version: "23"
       - name: Install dependencies
-        run: npm ci
-      
-      - name: Run tests without type module
-        id: normal-tests
-        run: |
-          # Save original package.json
-          cp package.json package.json.bak
-          
-          # Remove type:module if it exists
-          jq 'del(.type)' package.json > temp.json && mv temp.json package.json
-          
-          # Run tests and save the output
-          npm test || echo "Some tests failed, will retry with type:module"
-          
-          # Store the failing test files
-          npx jest --json --outputFile=test-results.json || true
-          echo "::set-output name=test-output-file::test-results.json"
-          
-          # Restore original package.json
-          mv package.json.bak package.json
-        continue-on-error: true
-      
-      - name: Run failed tests with type module
-        if: steps.normal-tests.outcome != 'success'
-        run: |
-          # Save original package.json
-          cp package.json package.json.bak
-          
-          # Add type:module
-          jq '.type = "module"' package.json > temp.json && mv temp.json package.json
-          
-          # Extract failed test files
-          FAILED_TESTS=$(jq -r '.testResults[] | select(.status == "failed") | .name' test-results.json | tr '\n' ' ')
-          
-          if [ -n "$FAILED_TESTS" ]; then
-            echo "Running failed tests with type:module: $FAILED_TESTS"
-            npx jest $FAILED_TESTS
-          else
-            echo "No specific test failures found to retry"
-          fi
-          
-          # Restore original package.json
-          mv package.json.bak package.json
-      
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-results
-          path: |
-            test-results.json
-            coverage/
+        run: npm install
+      - name: Install client dependencies
+        run: cd client && npm install
+      - name: Run Jest for Frontend
+        run: npm run test:frontend
+      - name: Run Jest for Backend
+        run: npm run test:backend

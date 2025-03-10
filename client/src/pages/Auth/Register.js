@@ -4,6 +4,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import "../../styles/AuthStyles.css";
+
 const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -12,11 +13,47 @@ const Register = () => {
   const [address, setAddress] = useState("");
   const [DOB, setDOB] = useState("");
   const [answer, setAnswer] = useState("");
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
+
+  // Validation functions
+  const validateEmail = (email) => {
+    return String(email)
+      .toLowerCase()
+      .match(
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      );
+  };
+
+  const validatePhone = (phone) => {
+    const phoneRegex = /^\d{1,15}$/;
+    return phoneRegex.test(phone);
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    
+    if (!validateEmail(email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+    
+    if (!validatePhone(phone)) {
+      newErrors.phone = "Phone number must contain only digits and be 15 characters or less";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   // form function
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form before submission
+    if (!validate()) {
+      return;
+    }
+    
     try {
       const res = await axios.post("/api/v1/auth/register", {
         name,
@@ -61,11 +98,12 @@ const Register = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="form-control"
+              className={`form-control ${errors.email ? "is-invalid" : ""}`}
               id="exampleInputEmail1"
-              placeholder="Enter Your Email "
+              placeholder="Enter Your Email"
               required
             />
+            {errors.email && <div className="invalid-feedback">{errors.email}</div>}
           </div>
           <div className="mb-3">
             <input
@@ -83,11 +121,12 @@ const Register = () => {
               type="text"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="form-control"
+              className={`form-control ${errors.phone ? "is-invalid" : ""}`}
               id="exampleInputPhone1"
               placeholder="Enter Your Phone"
               required
             />
+            {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
           </div>
           <div className="mb-3">
             <input

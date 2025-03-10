@@ -19,12 +19,13 @@ const AdminOrders = () => {
   const [changeStatus, setCHangeStatus] = useState("");
   const [orders, setOrders] = useState([]);
   const [auth, setAuth] = useAuth();
+
   const getOrders = async () => {
     try {
       const { data } = await axios.get("/api/v1/auth/all-orders");
       setOrders(data);
     } catch (error) {
-      console.log(error);
+      toast.error(error.response?.data?.message || "Failed to fetch orders");
     }
   };
 
@@ -37,11 +38,15 @@ const AdminOrders = () => {
       const { data } = await axios.put(`/api/v1/auth/order-status/${orderId}`, {
         status: value,
       });
-      getOrders();
+      if (data?.success) {
+        toast.success("Order status updated successfully");
+        getOrders();
+      }
     } catch (error) {
-      console.log(error);
+      toast.error(error.response?.data?.message || "Failed to update order status");
     }
   };
+
   return (
     <Layout title={"All Orders Data"}>
       <div className="row dashboard">
@@ -50,16 +55,18 @@ const AdminOrders = () => {
         </div>
         <div className="col-md-9">
           <h1 className="text-center">All Orders</h1>
-          {orders?.map((o, i) => {
-            return (
-              <div className="border shadow">
+          {orders?.length === 0 ? (
+            <p className="text-center">No orders found</p>
+          ) : (
+            orders?.map((o, i) => (
+              <div key={o._id} className="border shadow">
                 <table className="table">
                   <thead>
                     <tr>
                       <th scope="col">#</th>
                       <th scope="col">Status</th>
                       <th scope="col">Buyer</th>
-                      <th scope="col"> date</th>
+                      <th scope="col">Date</th>
                       <th scope="col">Payment</th>
                       <th scope="col">Quantity</th>
                     </tr>
@@ -108,8 +115,8 @@ const AdminOrders = () => {
                   ))}
                 </div>
               </div>
-            );
-          })}
+            ))
+          )}
         </div>
       </div>
     </Layout>

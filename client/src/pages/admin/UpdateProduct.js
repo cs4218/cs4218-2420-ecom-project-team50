@@ -20,27 +20,41 @@ const UpdateProduct = () => {
   const [photo, setPhoto] = useState("");
   const [id, setId] = useState("");
 
+  const resetForm = () => {
+    setName("");
+    setDescription("");
+    setPrice("");
+    setQuantity("");
+    setCategory("");
+    setShipping("");
+    setPhoto("");
+  };
+
   //get single product
   const getSingleProduct = async () => {
     try {
       const { data } = await axios.get(
         `/api/v1/product/get-product/${params.slug}`
       );
+      if (!data?.product) {
+        toast.error("Product not found");
+        return;
+      }
       setName(data.product.name);
       setId(data.product._id);
       setDescription(data.product.description);
       setPrice(data.product.price);
-      setPrice(data.product.price);
       setQuantity(data.product.quantity);
-      setShipping(data.product.shipping);
+      setShipping(data.product.shipping ? "1" : "0");
       setCategory(data.product.category._id);
     } catch (error) {
       console.log(error);
+      toast.error("Error fetching product");
     }
   };
   useEffect(() => {
     getSingleProduct();
-    //eslint-disable-next-line
+    // eslint-disable-next-line
   }, []);
   //get all category
   const getAllCategory = async () => {
@@ -51,7 +65,7 @@ const UpdateProduct = () => {
       }
     } catch (error) {
       console.log(error);
-      toast.error("Something wwent wrong in getting catgeory");
+      toast.error("Something went wrong in getting category");
     }
   };
 
@@ -62,6 +76,10 @@ const UpdateProduct = () => {
   //create product function
   const handleUpdate = async (e) => {
     e.preventDefault();
+    if (!name || !description || !price || !quantity || !category) {
+      toast.error("Name, Description, Price, Quantity and Category is required");
+      return;
+    }
     try {
       const productData = new FormData();
       productData.append("name", name);
@@ -70,32 +88,43 @@ const UpdateProduct = () => {
       productData.append("quantity", quantity);
       photo && productData.append("photo", photo);
       productData.append("category", category);
-      const { data } = axios.put(
+      if (shipping === "1") {
+        productData.append("shipping", true);
+      }
+      if (shipping === "0") {
+        productData.append("shipping", false);
+      }
+      const { data } = await axios.put(
         `/api/v1/product/update-product/${id}`,
         productData
       );
       if (data?.success) {
-        toast.error(data?.message);
-      } else {
+        resetForm();
         toast.success("Product Updated Successfully");
         navigate("/dashboard/admin/products");
+      } else {
+        toast.error(data?.message);
       }
     } catch (error) {
       console.log(error);
-      toast.error("something went wrong");
+      toast.error(error?.response?.data?.error || "something went wrong");
     }
   };
 
   //delete a product
   const handleDelete = async () => {
     try {
-      let answer = window.prompt("Are You Sure want to delete this product ? ");
+      let answer = window.confirm("Are you sure you want to delete this product?");
       if (!answer) return;
       const { data } = await axios.delete(
         `/api/v1/product/delete-product/${id}`
       );
-      toast.success("Product DEleted Succfully");
-      navigate("/dashboard/admin/products");
+      if (data?.success) {
+        toast.success("Product Deleted Successfully");
+        navigate("/dashboard/admin/products");
+      } else {
+        toast.error(data?.message);
+      }
     } catch (error) {
       console.log(error);
       toast.error("Something went wrong");
@@ -117,6 +146,7 @@ const UpdateProduct = () => {
                 size="large"
                 showSearch
                 className="form-select mb-3"
+                data-testid="select-category"
                 onChange={(value) => {
                   setCategory(value);
                 }}
@@ -200,15 +230,16 @@ const UpdateProduct = () => {
               </div>
               <div className="mb-3">
                 <Select
-                  bordered={false}
+                  variant="outline"
                   placeholder="Select Shipping "
                   size="large"
                   showSearch
                   className="form-select mb-3"
+                  data-testid="select-shipping"
                   onChange={(value) => {
                     setShipping(value);
                   }}
-                  value={shipping ? "yes" : "No"}
+                  value={shipping}
                 >
                   <Option value="0">No</Option>
                   <Option value="1">Yes</Option>

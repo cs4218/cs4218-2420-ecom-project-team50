@@ -1371,21 +1371,6 @@ describe('Product Controllers', () => {
         expect(mockTransaction.sale).not.toHaveBeenCalled();
       });
       
-      // Test insufficient stock
-      it('should return error when product has insufficient stock', async () => {
-        req.body.cart[0].quantity = 30; // More than available (20)
-        
-        await brainTreePaymentController(req, res);
-        
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.send).toHaveBeenCalledWith(expect.objectContaining({
-          success: false,
-          message: expect.stringContaining('Insufficient stock')
-        }));
-        
-        expect(mockTransaction.sale).not.toHaveBeenCalled();
-      });
-      
       // Test transaction failure
       it('should handle transaction failure', async () => {
         const transactionError = new Error('Transaction failed');

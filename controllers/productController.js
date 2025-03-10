@@ -475,13 +475,6 @@ export const brainTreePaymentController = async (req, res) => {
           message: `Product not found: ${item.name || item._id}`,
         });
       }
-      
-      if (product.quantity < item.quantity) {
-        return res.status(400).send({
-          success: false,
-          message: `Insufficient stock for: ${product.name}`,
-        });
-      }
     }
 
     let total = 0;

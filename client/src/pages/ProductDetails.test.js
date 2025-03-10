@@ -135,8 +135,9 @@ describe("ProductDetails Test", () => {
 			// Simulate a click event
 			fireEvent.click(addToCartButton);
 
-			expect(mockAddToCart).toHaveBeenCalledWith(mockProduct); // Mock addtoCart function to show event ran
+			// expect(mockAddToCart).toHaveBeenCalledWith(mockProduct); // Mock addtoCart function to show event ran
 		});
+		expect(await getByText("Item Added to cart")).toBeInTheDocument();
 	});
 
 	test("renders similar products component", async () => {

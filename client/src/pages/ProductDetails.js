@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Layout from "./../components/Layout";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useParams, useNavigate } from "react-router-dom";
 import { useCart } from "../context/cart";
 
@@ -54,6 +55,20 @@ const ProductDetails = () => {
 
 	return (
 		<Layout>
+			<ToastContainer
+				position="bottom-right"
+				autoClose={1000}
+				hideProgressBar={true}
+				newestOnTop={false}
+				closeOnClick
+				pauseOnHover
+				theme="light"
+				style={{
+					fontSize: "14px",
+					"--toastify-icon-size": "16px",
+					"--toastify-toast-min-height": "24px",
+				}}
+			/>
 			<div className="row container product-details">
 				<div className="col-md-6">
 					<img

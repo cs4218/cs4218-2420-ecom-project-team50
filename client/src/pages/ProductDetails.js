@@ -3,18 +3,20 @@ import Layout from "./../components/Layout";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import { useParams, useNavigate } from "react-router-dom";
+import { useCart } from "../context/cart";
 
 const ProductDetails = () => {
 	const params = useParams();
 	const navigate = useNavigate();
 	const [product, setProduct] = useState({});
-	const [cart, setCart] = useState({});
+	const [cart, setCart] = useCart();
 	const [relatedProducts, setRelatedProducts] = useState([]);
 
 	//initalp details
 	useEffect(() => {
 		if (params?.slug) getProduct();
 	}, [params?.slug]);
+
 	//getProduct
 	const getProduct = async () => {
 		try {
@@ -38,9 +40,20 @@ const ProductDetails = () => {
 			console.log(error);
 		}
 	};
+
+	// Handle Add to Cart
+	const handleAddToCart = () => {
+		try {
+			setCart([...cart, product]);
+			localStorage.setItem("cart", JSON.stringify([...cart, product]));
+			toast.success("Item Added to cart");
+		} catch (error) {
+			toast.error("Error adding item to cart");
+		}
+	};
+
 	return (
 		<Layout>
-			<ToastContainer />
 			<div className="row container product-details">
 				<div className="col-md-6">
 					<img
@@ -64,14 +77,7 @@ const ProductDetails = () => {
 						}) || "N/A"}
 					</h6>
 					<h6>Category : {product?.category?.name || "N/A"}</h6>
-					<button
-						className="btn btn-secondary ms-1 "
-						onClick={() => {
-							setCart([...cart, product]);
-							localStorage.setItem("cart", JSON.stringify([...cart, product]));
-							toast.success("Item Added to cart");
-						}}
-					>
+					<button className="btn btn-secondary ms-1" onClick={handleAddToCart}>
 						ADD TO CART
 					</button>
 				</div>
@@ -110,7 +116,7 @@ const ProductDetails = () => {
 									>
 										More Details
 									</button>
-									{/* {
+									{
 										<button
 											className="btn btn-dark ms-1"
 											onClick={() => {
@@ -124,7 +130,7 @@ const ProductDetails = () => {
 										>
 											ADD TO CART
 										</button>
-									} */}
+									}
 								</div>
 							</div>
 						</div>

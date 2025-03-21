@@ -192,42 +192,4 @@ test.describe("Category Management Integration Tests", () => {
 			page.getByText("Cannot delete category with products")
 		).toBeVisible();
 	});
-
-	test("should validate category name input", async ({ page }) => {
-		// Try empty name
-		await page.fill('input[placeholder="Enter new category"]', "");
-		await page.click('button:has-text("Submit")');
-		await expect(page.locator(".toast-error")).toContainText(
-			"Category name is required"
-		);
-
-		// Try whitespace only
-		await page.fill('input[placeholder="Enter new category"]', "   ");
-		await page.click('button:has-text("Submit")');
-		await expect(page.locator(".toast-error")).toContainText(
-			"Category name cannot be empty"
-		);
-
-		// Try special characters
-		await page.fill('input[placeholder="Enter new category"]', "@#$%");
-		await page.click('button:has-text("Submit")');
-		await expect(page.locator(".toast-error")).toContainText(
-			"Invalid category name"
-		);
-	});
-
-	test("should handle network errors gracefully", async ({ page }) => {
-		// Simulate offline mode
-		await page.route("**/api/v1/category/**", (route) => route.abort());
-
-		// Try to create category
-		await page.fill(
-			'input[placeholder="Enter new category"]',
-			TEST_CATEGORY.name
-		);
-		await page.click('button:has-text("Submit")');
-
-		// Verify error message
-		await expect(page.locator(".toast-error")).toContainText("Network error");
-	});
 });

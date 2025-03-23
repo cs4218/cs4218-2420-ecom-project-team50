@@ -47,7 +47,7 @@ router.get("/get-product/:slug", getSingleProductController);
 router.get("/product-photo/:pid", productPhotoController);
 
 //delete rproduct
-router.delete("/delete-product/:pid", deleteProductController);
+router.delete("/delete-product/:pid", requireSignIn, isAdmin, formidable(), deleteProductController);
 
 //filter product
 router.post("/product-filters", productFiltersController);
@@ -69,7 +69,7 @@ router.get("/product-category/:slug", productCategoryController);
 
 //payments routes
 //token
-router.get("/braintree/token", braintreeTokenController);
+router.get("/braintree/token", requireSignIn, braintreeTokenController);
 
 //payments
 router.post("/braintree/payment", requireSignIn, brainTreePaymentController);

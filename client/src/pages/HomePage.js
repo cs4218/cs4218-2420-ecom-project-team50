@@ -170,7 +170,7 @@ const HomePage = () => {
         
         <div className="col-md-9 ">
           <h1 className="text-center">All Products</h1>
-          <div className="d-flex flex-wrap">
+          <div className="d-flex flex-wrap" data-testid="product-list">
             {products?.map((p) => (
               <div className="card m-2" key={p._id}>
                 <img
@@ -195,6 +195,7 @@ const HomePage = () => {
                     <button
                       className="btn btn-info ms-1"
                       onClick={() => navigate(`/product/${p.slug}`)}
+                      data-testid={p.name}
                     >
                       More Details
                     </button>

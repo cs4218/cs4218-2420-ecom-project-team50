@@ -727,6 +727,123 @@ describe('Product API Endpoints', () => {
       expect(response.body.success).toBe(false);
     });
   });
+
+  describe('Product Uniqueness Constraints', () => {
+    let uniqueProduct;
+
+    beforeAll(async () => {
+      // Create a unique product to test constraints against
+      const response = await request(server)
+        .post('/api/v1/product/create-product')
+        .set('Authorization', `${adminToken}`)
+        .field('name', 'Unique Product')
+        .field('description', 'Unique Description')
+        .field('price', '299')
+        .field('category', testCategory._id.toString())
+        .field('quantity', '5')
+        .field('shipping', 'true')
+        .attach('photo', path.resolve(__dirname, '../fixtures/test-image.jpg'));
+
+      uniqueProduct = response.body.products;
+      expect(response.status).toBe(201);
+    });
+
+    it('should reject product with same name, description and price', async () => {
+      const response = await request(server)
+        .post('/api/v1/product/create-product')
+        .set('Authorization', `${adminToken}`)
+        .field('name', 'Unique Product') // Same name
+        .field('description', 'Unique Description') // Same description
+        .field('price', '299') // Same price
+        .field('category', testCategory._id.toString())
+        .field('quantity', '10')
+        .field('shipping', 'false')
+        .attach('photo', path.resolve(__dirname, '../fixtures/test-image.jpg'));
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('Product already exists');
+    });
+
+    it('should accept product with same name and description but different price', async () => {
+      const response = await request(server)
+        .post('/api/v1/product/create-product')
+        .set('Authorization', `${adminToken}`)
+        .field('name', 'Unique Product') // Same name
+        .field('description', 'Unique Description') // Same description
+        .field('price', '399') // Different price
+        .field('category', testCategory._id.toString())
+        .field('quantity', '5')
+        .field('shipping', 'true')
+        .attach('photo', path.resolve(__dirname, '../fixtures/test-image.jpg'));
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+    });
+
+    it('should accept product with same name and price but different description', async () => {
+      const response = await request(server)
+        .post('/api/v1/product/create-product')
+        .set('Authorization', `${adminToken}`)
+        .field('name', 'Unique Product') // Same name
+        .field('description', 'Different Description') // Different description
+        .field('price', '299') // Same price
+        .field('category', testCategory._id.toString())
+        .field('quantity', '5')
+        .field('shipping', 'true')
+        .attach('photo', path.resolve(__dirname, '../fixtures/test-image.jpg'));
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+    });
+
+    it('should accept product with same description and price but different name', async () => {
+      const response = await request(server)
+        .post('/api/v1/product/create-product')
+        .set('Authorization', `${adminToken}`)
+        .field('name', 'Different Product') // Different name
+        .field('description', 'Unique Description') // Same description
+        .field('price', '299') // Same price
+        .field('category', testCategory._id.toString())
+        .field('quantity', '5')
+        .field('shipping', 'true')
+        .attach('photo', path.resolve(__dirname, '../fixtures/test-image.jpg'));
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+    });
+
+    it('should reject updated product that matches existing name, description and price', async () => {
+      // Create a product to update later
+      const createResponse = await request(server)
+        .post('/api/v1/product/create-product')
+        .set('Authorization', `${adminToken}`)
+        .field('name', 'Product To Update')
+        .field('description', 'This will be updated')
+        .field('price', '199')
+        .field('category', testCategory._id.toString())
+        .field('quantity', '5')
+        .field('shipping', 'true')
+        .attach('photo', path.resolve(__dirname, '../fixtures/test-image.jpg'));
+
+      expect(createResponse.status).toBe(201);
+
+      // Try to update to match an existing product
+      const updateResponse = await request(server)
+        .put(`/api/v1/product/update-product/${createResponse.body.products._id}`)
+        .set('Authorization', `${adminToken}`)
+        .field('name', 'Unique Product')
+        .field('description', 'Unique Description')
+        .field('price', '299')
+        .field('category', testCategory._id.toString())
+        .field('quantity', '5')
+        .field('shipping', 'true');
+
+      expect(updateResponse.status).toBe(400);
+      expect(updateResponse.body.success).toBe(false);
+      expect(updateResponse.body.message).toContain('Product already exists');
+    });
+  });
 });
 
 describe('Additional Product API Tests', () => {

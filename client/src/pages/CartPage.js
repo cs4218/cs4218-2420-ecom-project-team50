@@ -83,7 +83,7 @@ const CartPage = () => {
       toast.success("Payment Completed Successfully");
     } catch (error) {
       setLoading(false);
-      toast.error("Payment failed");
+      toast.error(error?.response?.data?.message || "Payment failed");
     }
   };
   

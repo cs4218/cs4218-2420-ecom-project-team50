@@ -6,6 +6,7 @@ import fs from "fs";
 import slugify from "slugify";
 import braintree from "braintree";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
 
 dotenv.config();
 
@@ -28,9 +29,9 @@ export const createProductController = async (req, res) => {
     const { photo } = req.files;
     //validation
     switch (true) {
-      case !name.trim():
+      case !name || !name.trim():
         return res.status(400).send({ error: "Name is Required" });
-      case !description.trim():
+      case !description || !description.trim():
         return res.status(400).send({ error: "Description is Required" });
       case !price:
         return res.status(400).send({ error: "Price is Required" });
@@ -46,6 +47,29 @@ export const createProductController = async (req, res) => {
         return res
           .status(400)
           .send({ error: "photo is Required and should be less then 1mb" });
+    }
+
+    // Check if category exists
+    const categoryExists = await categoryModel.exists({ _id: category });
+    if (!categoryExists) {
+      return res.status(400).send({
+        success: false,
+        message: "Category not found",
+      });
+    }
+
+    // Check if a product exists with the same name, description, price
+    const productExists = await productModel.exists({
+      name: name.trim(),
+      description: description.trim(),
+      price: Number(price),
+    });
+
+    if (productExists) {
+      return res.status(400).send({
+        success: false,
+        message: "Product already exists",
+      });
     }
 
     // Create product with sanitized input
@@ -110,6 +134,13 @@ export const getSingleProductController = async (req, res) => {
       .findOne({ slug: req.params.slug })
       .select("-photo")
       .populate("category");
+    
+    if (!product) {
+      return res.status(404).send({
+        success: false,
+        message: "Product not found",
+      });
+    }
 
     res.status(200).send({
       success: true,
@@ -129,6 +160,12 @@ export const getSingleProductController = async (req, res) => {
 // get photo
 export const productPhotoController = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.pid)) {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid product ID",
+      });
+    }
     const product = await productModel.findById(req.params.pid).select("photo");
     if (!product) {
       return res.status(404).send({
@@ -159,6 +196,12 @@ export const productPhotoController = async (req, res) => {
 //delete controller
 export const deleteProductController = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.pid)) {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid product ID",
+      });
+    }
     const product =await productModel.findByIdAndDelete(req.params.pid);
     if (!product) {
       return res.status(404).send({
@@ -186,6 +229,7 @@ export const updateProductController = async (req, res) => {
     const { name, description, price, category, quantity, shipping } =
       req.fields;
     const { photo } = req.files || {};
+
     //alidation
     switch (true) {
       case !name.trim():
@@ -218,11 +262,39 @@ export const updateProductController = async (req, res) => {
       slug: slugify(name)
     };
 
+    if (!mongoose.Types.ObjectId.isValid(req.params.pid)) {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid product ID",
+      });
+    }
+
+    // Check if a product exists with the same name, description, price
+    const productExists = await productModel.exists({
+      name: name.trim(),
+      description: description.trim(),
+      price: Number(price),
+    });
+
+    if (productExists) {
+      return res.status(400).send({
+        success: false,
+        message: "Product already exists",
+      });
+    }
+
     const products = await productModel.findByIdAndUpdate(
       req.params.pid,
       updatedFields,
       { new: true }
     );
+
+    if (!products) {
+      return res.status(404).send({
+        success: false,
+        message: "Product not found",
+      });
+    }
 
     if (photo) {
       products.photo.data = fs.readFileSync(photo.path);
@@ -295,7 +367,16 @@ export const productCountController = async (req, res) => {
 export const productListController = async (req, res) => {
   try {
     const perPage = 6;
-    const page = parseInt(req.params.page) || 1;
+
+    const page = /^-?\d+$/.test(req.params.page) ? parseInt(req.params.page) : null;
+
+    if (page == null) {
+      return res.status(400).send({
+        success: false,
+        message: "Page number must be a positive integer",
+      });
+    }
+
 
     if (page < 1) {
       return res.status(400).send({
@@ -467,7 +548,16 @@ export const brainTreePaymentController = async (req, res) => {
     }
 
     // Validate products exist and are in stock
+    const counterOfEachProduct = {};
     for (const item of cart) {
+      // Check if item._id is a valid ObjectId
+      if (!mongoose.Types.ObjectId.isValid(item._id)) {
+        console.log(item._id);
+        return res.status(400).send({
+          success: false,
+          message: "Invalid product ID",
+        });
+      }
       const product = await productModel.findById(item._id);
       if (!product) {
         return res.status(404).send({
@@ -475,6 +565,25 @@ export const brainTreePaymentController = async (req, res) => {
           message: `Product not found: ${item.name || item._id}`,
         });
       }
+
+      if (counterOfEachProduct[item._id]) {
+        counterOfEachProduct[item._id]++;
+      } else {
+        counterOfEachProduct[item._id] = 1;
+      }
+
+      if (counterOfEachProduct[item._id] > product.quantity) {
+        return res.status(400).send({
+          success: false,
+          message: `Product is out of stock: ${item.name || item._id}`,
+        });
+      }
+    }
+
+    // Update quantities of products in db, iterate over counterOfEachProduct
+    for (const [productId, quantity] of Object.entries(counterOfEachProduct)) { 
+      await productModel.findByIdAndUpdate
+      (productId, { $inc: { quantity: -quantity } });
     }
 
     let total = 0;

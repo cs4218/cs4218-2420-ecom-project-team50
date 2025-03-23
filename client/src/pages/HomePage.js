@@ -19,6 +19,9 @@ const HomePage = () => {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [category, setCategory] = useState("");
+  const [sort, setSort] = useState("");
+  const [priceRange, setPriceRange] = useState("");
 
   //get all cat
   const getAllCategory = async () => {
@@ -27,7 +30,7 @@ const HomePage = () => {
       if (data?.success) {
         setCategories(data.category);
       } else {
-        console.error("API response does not contain expected data")
+        console.error("API response does not contain expected data");
       }
     } catch (error) {
       toast.error("Failed to get categories");
@@ -38,7 +41,7 @@ const HomePage = () => {
     getAllCategory();
     getTotal();
   }, []);
-  
+
   //get all products
   const getAllProducts = async () => {
     try {
@@ -50,7 +53,7 @@ const HomePage = () => {
         console.log(data.products);
         setProducts(data.products);
       } else {
-        console.error("API response does not contain expected data")
+        console.error("API response does not contain expected data");
       }
     } catch (error) {
       setLoading(false);
@@ -65,7 +68,7 @@ const HomePage = () => {
       if (data?.success) {
         setTotal(5);
       } else {
-        console.error("API response does not contain expected data")
+        console.error("API response does not contain expected data");
       }
     } catch (error) {
       toast.error("Failed to get total count");
@@ -76,7 +79,7 @@ const HomePage = () => {
     if (page === 1) return;
     loadMoreProducts();
   }, [page]);
-  
+
   //load more products
   const loadMoreProducts = async () => {
     try {
@@ -120,6 +123,16 @@ const HomePage = () => {
       toast.error("Failed to get products");
     }
   };
+
+  const handleReset = () => {
+    setChecked([]);
+    setRadio([]);
+    setCategory("");
+    setSort("");
+    setPriceRange("");
+    getAllProducts();
+  };
+
   return (
     <Layout title={"ALL Products - Best offers"}>
       {/* banner image */}
@@ -138,6 +151,7 @@ const HomePage = () => {
               <Checkbox
                 key={c.slug}
                 onChange={(e) => handleFilter(e.target.checked, c._id)}
+                checked={checked.includes(c._id)}
               >
                 {c.name}
               </Checkbox>
@@ -146,7 +160,10 @@ const HomePage = () => {
           
           <h4 className="text-center mt-4">Filter By Price</h4>
           <div className="d-flex flex-column">
-            <Radio.Group onChange={(e) => setRadio(e.target.value)}>
+          <Radio.Group
+              onChange={(e) => setRadio(e.target.value)}
+              value={radio}
+            >
               {Prices?.map((p) => (
                 <div key={p._id}>
                   <Radio value={p.array}>{p.name}</Radio>
@@ -156,19 +173,15 @@ const HomePage = () => {
           </div>
           <div className="d-flex flex-column">
             <button
-              className="btn btn-danger"
-              onClick={async () => {
-                setChecked([]);
-                setRadio([]);
-                await getAllProducts();
-              }}
+              className="btn btn-danger ms-2"
+              onClick={handleReset}
             >
               RESET FILTERS
             </button>
           </div>
         </div>
         
-        <div className="col-md-9">
+        <div className="col-md-9 ">
           <h1 className="text-center">All Products</h1>
           <div className="d-flex flex-wrap">
             {products && products.length > 0 ? (

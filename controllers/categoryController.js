@@ -1,5 +1,7 @@
 import categoryModel from "../models/categoryModel.js";
+import productModel from "../models/productModel.js";
 import slugify from "slugify";
+
 export const createCategoryController = async (req, res) => {
 	try {
 		const { name } = req.body;
@@ -99,24 +101,37 @@ export const singleCategoryController = async (req, res) => {
 export const deleteCategoryCOntroller = async (req, res) => {
 	try {
 		const { id } = req.params;
-		const deleteCategory = await categoryModel.findByIdAndDelete(id);
-		if (!deleteCategory) {
-			// If no category was found, return a 404 response
+
+		// Check if category exists
+		const category = await categoryModel.findById(id);
+		if (!category) {
 			return res.status(404).send({
 				success: false,
 				message: "Category not found",
 			});
-		} else {
-			res.status(200).send({
-				success: true,
-				message: "Category Deleted Successfully",
+		}
+
+		// Check if there are any products in this category
+		const productsInCategory = await productModel.find({ category: id });
+
+		if (productsInCategory.length > 0) {
+			return res.status(400).send({
+				success: false,
+				message: "Cannot delete category with products",
 			});
 		}
+
+		// If no products found, proceed with deletion
+		const deleteCategory = await categoryModel.findByIdAndDelete(id);
+		res.status(200).send({
+			success: true,
+			message: "Category Deleted Successfully",
+		});
 	} catch (error) {
 		console.log(error);
 		res.status(500).send({
 			success: false,
-			message: "error while deleting category",
+			message: "Cannot delete category with products",
 			error,
 		});
 	}

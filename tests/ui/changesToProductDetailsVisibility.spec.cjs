@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+test.describe.configure({ mode: 'serial' });
+
 const originalData = {
   nameOnAdminPage: 'Novel Novel A bestselling',
   updatedNameOnAdminPage: '',

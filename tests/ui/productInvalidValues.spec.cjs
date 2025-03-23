@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+test.describe.configure({ mode: 'serial' });
+
 const validProduct = {
   name: 'Test Invalid Values Product',
   description: 'This is a product for invalid values testing',

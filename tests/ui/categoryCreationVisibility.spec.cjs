@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 const baseUrl = 'http://localhost:3000';
+test.describe.configure({ mode: 'serial' });
 
 function generateUniqueCategoryName() {
-  return `Test Category`;
+  return `Test Category ${Date.now()}`;
 }
 
 const newCategoryName = generateUniqueCategoryName();
@@ -41,7 +42,7 @@ async function createCategory(page, categoryName) {
   await page.getByRole('textbox', { name: 'Enter new category' }).click();
   await page.getByRole('textbox', { name: 'Enter new category' }).fill(categoryName);
   await page.getByRole('button', { name: 'Submit' }).click();
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(2000);
 
   await expect(page.getByText(`${categoryName} is created`)).toBeVisible();
 }

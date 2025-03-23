@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test';
 
+test.describe.configure({ mode: 'serial' });
+
 const testData = {
-  initialCategory: `Test Category`,
-  updatedCategory: `Updated Category`
+  initialCategory: `Test Category ${Date.now()}`,
+  updatedCategory: `Updated Category ${Date.now()}`
 };
 
 async function loginAsAdmin(page) {

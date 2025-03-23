@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+test.describe.configure({ mode: 'serial' });
+
 function generateUniqueProductName() {
   return `Test Product UI`;
 }

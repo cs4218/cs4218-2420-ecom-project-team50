@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 const testData = {
-  initialCategory: `Test Category`,
-  updatedName: `Updated Category`,
+  initialCategory: `Test Category ${Date.now()}`,
+  updatedName: `Updated Category ${Date.now()}`,
   existingCategory: 'Electronics' // Assuming this category already exists
 };
 

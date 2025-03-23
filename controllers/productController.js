@@ -58,6 +58,20 @@ export const createProductController = async (req, res) => {
       });
     }
 
+    // Check if a product exists with the same name, description, price
+    const productExists = await productModel.exists({
+      name: name.trim(),
+      description: description.trim(),
+      price: Number(price),
+    });
+
+    if (productExists) {
+      return res.status(400).send({
+        success: false,
+        message: "Product already exists",
+      });
+    }
+
     // Create product with sanitized input
     const products = new productModel({
       name: name.trim(),
@@ -252,6 +266,20 @@ export const updateProductController = async (req, res) => {
       return res.status(400).send({
         success: false,
         message: "Invalid product ID",
+      });
+    }
+
+    // Check if a product exists with the same name, description, price
+    const productExists = await productModel.exists({
+      name: name.trim(),
+      description: description.trim(),
+      price: Number(price),
+    });
+
+    if (productExists) {
+      return res.status(400).send({
+        success: false,
+        message: "Product already exists",
       });
     }
 
@@ -550,6 +578,12 @@ export const brainTreePaymentController = async (req, res) => {
           message: `Product is out of stock: ${item.name || item._id}`,
         });
       }
+    }
+
+    // Update quantities of products in db, iterate over counterOfEachProduct
+    for (const [productId, quantity] of Object.entries(counterOfEachProduct)) { 
+      await productModel.findByIdAndUpdate
+      (productId, { $inc: { quantity: -quantity } });
     }
 
     let total = 0;

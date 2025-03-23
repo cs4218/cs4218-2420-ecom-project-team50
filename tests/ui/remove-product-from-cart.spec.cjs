@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test';
 
 test('Test cart functionality - adding and removing products', async ({ page }) => {
   await page.goto('http://localhost:3000/login');
-  await page.getByRole('textbox', { name: 'Enter Your Email' }).fill('lily@gmail.com');
-  await page.getByRole('textbox', { name: 'Enter Your Password' }).fill('lily23');
+  await page.getByRole('textbox', { name: 'Enter Your Email' }).fill('cs4218@test.com');
+  await page.getByRole('textbox', { name: 'Enter Your Password' }).fill('cs4218@test.com');
   await page.getByRole('button', { name: 'LOGIN' }).click();
   
   await expect(page).toHaveURL('http://localhost:3000/');
@@ -45,8 +45,8 @@ test('Test cart functionality - adding and removing products', async ({ page }) 
 
 test('Test empty cart functionality', async ({ page }) => {
   await page.goto('http://localhost:3000/login');
-  await page.getByRole('textbox', { name: 'Enter Your Email' }).fill('lily@gmail.com');
-  await page.getByRole('textbox', { name: 'Enter Your Password' }).fill('lily23');
+  await page.getByRole('textbox', { name: 'Enter Your Email' }).fill('cs4218@test.com');
+  await page.getByRole('textbox', { name: 'Enter Your Password' }).fill('cs4218@test.com');
   await page.getByRole('button', { name: 'LOGIN' }).click();
   
   await page.waitForURL('http://localhost:3000/');

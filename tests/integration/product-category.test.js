@@ -13,8 +13,8 @@ import productRoutes from '../../routes/productRoutes.js';
 import cors from "cors";
 import morgan from "morgan";
 
-// Increase the test timeout
-jest.setTimeout(30000); // 30 seconds
+
+jest.setTimeout(30000); 
 
 let server;
 let app;
@@ -26,7 +26,7 @@ let testCategory;
 let secondCategory;
 let testProduct;
 
-// Set up the MongoDB connection for tests
+
 beforeAll(async () => {
   try {
     if (mongoose.connection.readyState !== 0) {
@@ -35,7 +35,7 @@ beforeAll(async () => {
     await mongoose.connect(process.env.MONGO_TEST_URL);
     console.log(`Connected to test database: ${mongoose.connection.name}`);
 
-    // Create express app and configure it
+    
     const app = express();
 
     //middlewares
@@ -48,19 +48,19 @@ beforeAll(async () => {
     app.use("/api/v1/category", categoryRoutes);
     app.use("/api/v1/product", productRoutes);
 
-    // Create server on random port
+    
     server = createServer(app);
     await new Promise(resolve => server.listen(0, resolve));
     console.log(`Test server running on port: ${server.address().port}`);
 
-    // Clear existing test data
+    
     await Promise.all([
       userModel.deleteMany({}),
       categoryModel.deleteMany({}),
       productModel.deleteMany({})
     ]);
 
-    // Create test user and admin
+    
     testUser = await userModel.create({
       name: 'Test User',
       email: 'testuser@example.com',
@@ -80,7 +80,7 @@ beforeAll(async () => {
       answer: 'admin answer'
     });
 
-    // Login to get tokens
+    
     const userResponse = await request(server)
       .post('/api/v1/auth/login')
       .send({ email: 'testuser@example.com', password: 'cs4218@test.com' });
@@ -92,27 +92,27 @@ beforeAll(async () => {
     adminToken = adminResponse.body.token;
   } catch (error) {
     console.error('BeforeAll setup error:', error);
-    throw error; // Rethrow to fail tests
+    throw error; 
   }
 });
 
-// Clean up after all tests
+
 afterAll(async () => {
   try {
     console.log('Running afterAll cleanup');
-    // Close server first to stop any pending requests
+    
     if (server) {
       await new Promise((resolve) => server.close(resolve));
     }
 
-    // Clean up test data
+    
     await Promise.all([
       productModel.deleteMany({}),
       categoryModel.deleteMany({}),
       userModel.deleteMany({})
     ]);
 
-    // Finally disconnect from database
+    
     await mongoose.disconnect();
     console.log('Test database connection closed');
   } catch (error) {
@@ -223,7 +223,7 @@ describe('Product-Category Interaction Tests', () => {
 
   describe('Category Update with Products', () => {
     it('should update category name without affecting its products', async () => {
-      // Update the category name
+      
       const updateResponse = await request(server)
         .put(`/api/v1/category/update-category/${testCategory._id}`)
         .set('Authorization', `${adminToken}`)
@@ -235,7 +235,7 @@ describe('Product-Category Interaction Tests', () => {
 
       testCategory = updateResponse.body.category;
 
-      // Verify product still belongs to the updated category
+      
       const productResponse = await request(server)
         .get(`/api/v1/product/get-product/${testProduct.slug}`);
 
@@ -320,14 +320,14 @@ describe('Product-Category Interaction Tests', () => {
     });
 
     it('should allow deleting the category after removing its products', async () => {
-      // First delete the product in the category
+      
       const deleteProductResponse = await request(server)
         .delete(`/api/v1/product/delete-product/${testProduct._id}`)
         .set('Authorization', `${adminToken}`);
 
       expect(deleteProductResponse.status).toBe(200);
 
-      // Now try to delete the category
+      
       const response = await request(server)
         .delete(`/api/v1/category/delete-category/${testCategory._id}`)
         .set('Authorization', `${adminToken}`);
@@ -362,7 +362,7 @@ describe('Product-Category Interaction Tests', () => {
         .set('Authorization', `${adminToken}`)
         .send({ name: 'Non-existent Category' });
 
-      // The implementation returns 200 with the category being null
+      
       expect(response.status).toBe(200);
       expect(response.body.category).toBeNull();
     });
@@ -371,7 +371,7 @@ describe('Product-Category Interaction Tests', () => {
       const response = await request(server)
         .get('/api/v1/category/category/non-existent-slug');
 
-      // The implementation might return 200 with null or 404
+      
       if (response.status === 200) {
         expect(response.body.category).toBeNull();
       } else {

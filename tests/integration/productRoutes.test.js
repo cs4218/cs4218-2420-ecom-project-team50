@@ -1,4 +1,4 @@
-// tests/integration/product.test.js
+
 import request from 'supertest';
 import mongoose from 'mongoose';
 import productModel from '../../models/productModel.js';
@@ -14,8 +14,8 @@ import productRoutes from '../../routes/productRoutes.js'
 import cors from "cors";
 import morgan from "morgan";
 
-// Increase the test timeout
-jest.setTimeout(30000); // 30 seconds
+
+jest.setTimeout(30000); 
 
 
 let server;
@@ -27,7 +27,7 @@ let testUser;
 let testAdmin;
 let adminToken;
 
-// Set up the MongoDB connection for tests
+
 beforeAll(async () => {
   try {
     if (mongoose.connection.readyState !== 0) {
@@ -36,7 +36,7 @@ beforeAll(async () => {
     await mongoose.connect(process.env.MONGO_TEST_URL);
     console.log(`Connected to test database: ${mongoose.connection.name}`);
 
-    // // Create express app and configure it
+    
     const app = express();
 
     //middlewares
@@ -49,25 +49,25 @@ beforeAll(async () => {
     app.use("/api/v1/category", categoryRoutes);
     app.use("/api/v1/product", productRoutes);
 
-    // // Create server on random port
+    
     server = createServer(app);
     await new Promise(resolve => server.listen(0, resolve));
     console.log(`Test server running on port: ${server.address().port}`);
 
-    // Clear existing test data
+    
     await Promise.all([
       userModel.deleteMany({}),
       categoryModel.deleteMany({}),
       productModel.deleteMany({})
     ]);
 
-    // Create test category first
+    
     testCategory = await categoryModel.create({
       name: 'Test Category',
       slug: 'test-category'
     });
 
-    // Create test user and admin
+    
     testUser = await userModel.create({
       name: 'Test User',
       email: 'testuser@example.com',
@@ -87,7 +87,7 @@ beforeAll(async () => {
       answer: 'admin answer'
     });
 
-    // Login to get tokens
+    
     const userResponse = await request(server)
       .post('/api/v1/auth/login')
       .send({ email: 'testuser@example.com', password: 'cs4218@test.com' });
@@ -99,27 +99,27 @@ beforeAll(async () => {
     adminToken = adminResponse.body.token;
   } catch (error) {
     console.error('BeforeAll setup error:', error);
-    throw error; // Rethrow to fail tests
+    throw error; 
   }
 });
 
-// Clean up after all tests
+
 afterAll(async () => {
   try {
     console.log('Running afterAll cleanup');
-    // Close server first to stop any pending requests
+    
     if (server) {
       await new Promise((resolve) => server.close(resolve));
     }
 
-    // Clean up test data
+    
     await Promise.all([
       productModel.deleteMany({}),
       categoryModel.deleteMany({}),
       userModel.deleteMany({})
     ]);
 
-    // Finally disconnect from database
+    
     await mongoose.disconnect();
     console.log('Test database connection closed');
   } catch (error) {
@@ -271,7 +271,7 @@ describe('Product API Endpoints', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
 
-      // re-insert the product
+      
       await productModel.create(testProduct);
 
     });
@@ -293,7 +293,7 @@ describe('Product API Endpoints', () => {
 
   describe('POST /api/v1/product/product-filters', () => {
     beforeAll(async () => {
-      // Create test products for filtering
+      
       await productModel.create([
         {
           name: 'Budget Phone',
@@ -317,7 +317,7 @@ describe('Product API Endpoints', () => {
           name: 'Zero Price Phone',
           slug: 'zero-price-phone',
           description: 'Free phone',
-          price: 0, // Minimum boundary
+          price: 0, 
           category: testCategory._id,
           quantity: 1,
           shipping: true
@@ -326,7 +326,7 @@ describe('Product API Endpoints', () => {
           name: 'Max Price Phone',
           slug: 'max-price-phone',
           description: 'Most expensive phone',
-          price: Number.MAX_SAFE_INTEGER, // Maximum boundary
+          price: Number.MAX_SAFE_INTEGER, 
           category: testCategory._id,
           quantity: 1,
           shipping: true
@@ -359,7 +359,7 @@ describe('Product API Endpoints', () => {
       expect(response.body.products.length).toBeGreaterThanOrEqual(2);
     });
 
-    // Additional boundary value tests
+    
 
     it('should filter products at maximum price', async () => {
       const response = await request(server)
@@ -435,9 +435,9 @@ describe('Product API Endpoints', () => {
   });
 
   describe('GET /api/v1/product/product-list/:page', () => {
-    // Create enough products to test pagination
+    
     beforeAll(async () => {
-      // Create 8 test products (more than one page of 6)
+      
       const testProducts = Array.from({ length: 8 }, (_, index) => ({
         name: `Pagination Test Product ${index + 1}`,
         slug: `pagination-test-product-${index + 1}`,
@@ -458,7 +458,7 @@ describe('Product API Endpoints', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(Array.isArray(response.body.products)).toBe(true);
-      // First page should have maximum 6 products
+      
       expect(response.body.products.length).toBeLessThanOrEqual(6);
     });
 
@@ -469,7 +469,7 @@ describe('Product API Endpoints', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(Array.isArray(response.body.products)).toBe(true);
-      // There should be some products on the second page
+      
       expect(response.body.products.length).toBeGreaterThan(0);
     });
 
@@ -500,8 +500,8 @@ describe('Product API Endpoints', () => {
       const response = await request(server)
         .get('/api/v1/product/product-list/1.5');
 
-      // Most implementations either floor the number or return an error
-      // Check either a 200 response or a 400 error
+      
+      
       expect([200, 400]).toContain(response.status);
     });
 
@@ -547,7 +547,7 @@ describe('Product API Endpoints', () => {
 
   describe('GET /api/v1/product/related-product/:pid/:cid', () => {
     it('should get related products', async () => {
-      // Create a new product to test related products
+      
       const newProduct = await productModel.create({
         name: 'Related Test Product',
         description: 'Another test product',
@@ -616,7 +616,7 @@ describe('Product API Endpoints', () => {
 
   describe('POST /api/v1/product/braintree/payment', () => {
     it('should process payment when logged in', async () => {
-      // Create test product for payment
+      
       const paymentProduct = await productModel.create({
         name: 'Payment Test Product',
         description: 'Product for payment testing',
@@ -631,7 +631,7 @@ describe('Product API Endpoints', () => {
         .post('/api/v1/product/braintree/payment')
         .set('Authorization', `${token}`)
         .send({
-          nonce: 'fake-valid-nonce', // Braintree sandbox testing nonce
+          nonce: 'fake-valid-nonce', 
           cart: [{
             _id: paymentProduct._id,
             name: paymentProduct.name,
@@ -732,7 +732,7 @@ describe('Product API Endpoints', () => {
     let uniqueProduct;
 
     beforeAll(async () => {
-      // Create a unique product to test constraints against
+      
       const response = await request(server)
         .post('/api/v1/product/create-product')
         .set('Authorization', `${adminToken}`)
@@ -752,9 +752,9 @@ describe('Product API Endpoints', () => {
       const response = await request(server)
         .post('/api/v1/product/create-product')
         .set('Authorization', `${adminToken}`)
-        .field('name', 'Unique Product') // Same name
-        .field('description', 'Unique Description') // Same description
-        .field('price', '299') // Same price
+        .field('name', 'Unique Product') 
+        .field('description', 'Unique Description') 
+        .field('price', '299') 
         .field('category', testCategory._id.toString())
         .field('quantity', '10')
         .field('shipping', 'false')
@@ -769,9 +769,9 @@ describe('Product API Endpoints', () => {
       const response = await request(server)
         .post('/api/v1/product/create-product')
         .set('Authorization', `${adminToken}`)
-        .field('name', 'Unique Product') // Same name
-        .field('description', 'Unique Description') // Same description
-        .field('price', '399') // Different price
+        .field('name', 'Unique Product') 
+        .field('description', 'Unique Description') 
+        .field('price', '399') 
         .field('category', testCategory._id.toString())
         .field('quantity', '5')
         .field('shipping', 'true')
@@ -785,9 +785,9 @@ describe('Product API Endpoints', () => {
       const response = await request(server)
         .post('/api/v1/product/create-product')
         .set('Authorization', `${adminToken}`)
-        .field('name', 'Unique Product') // Same name
-        .field('description', 'Different Description') // Different description
-        .field('price', '299') // Same price
+        .field('name', 'Unique Product') 
+        .field('description', 'Different Description') 
+        .field('price', '299') 
         .field('category', testCategory._id.toString())
         .field('quantity', '5')
         .field('shipping', 'true')
@@ -801,9 +801,9 @@ describe('Product API Endpoints', () => {
       const response = await request(server)
         .post('/api/v1/product/create-product')
         .set('Authorization', `${adminToken}`)
-        .field('name', 'Different Product') // Different name
-        .field('description', 'Unique Description') // Same description
-        .field('price', '299') // Same price
+        .field('name', 'Different Product') 
+        .field('description', 'Unique Description') 
+        .field('price', '299') 
         .field('category', testCategory._id.toString())
         .field('quantity', '5')
         .field('shipping', 'true')
@@ -814,7 +814,7 @@ describe('Product API Endpoints', () => {
     });
 
     it('should reject updated product that matches existing name, description and price', async () => {
-      // Create a product to update later
+      
       const createResponse = await request(server)
         .post('/api/v1/product/create-product')
         .set('Authorization', `${adminToken}`)
@@ -828,7 +828,7 @@ describe('Product API Endpoints', () => {
 
       expect(createResponse.status).toBe(201);
 
-      // Try to update to match an existing product
+      
       const updateResponse = await request(server)
         .put(`/api/v1/product/update-product/${createResponse.body.products._id}`)
         .set('Authorization', `${adminToken}`)
@@ -994,7 +994,7 @@ describe('Additional Product API Tests', () => {
       const response = await request(server)
         .get('/api/v1/product/product-list/1.5');
 
-      // Check either a successful response (with floored page number) or an error
+      
       if (response.status === 200) {
         expect(response.body.products.length).toBeLessThanOrEqual(6);
       } else {
@@ -1023,17 +1023,17 @@ describe('Additional Product API Tests', () => {
     });
 
     it('should search with case insensitivity', async () => {
-      // First search with lowercase
+      
       const lowerResponse = await request(server)
         .get('/api/v1/product/search/phone');
 
-      // Then search with uppercase
+      
       const upperResponse = await request(server)
         .get('/api/v1/product/search/PHONE');
 
       expect(lowerResponse.status).toBe(200);
       expect(upperResponse.status).toBe(200);
-      // Both searches should return results since it should be case insensitive
+      
       expect(upperResponse.body.results.length).toBeGreaterThan(0);
       expect(lowerResponse.body.results.length).toBeGreaterThan(0);
     });
@@ -1078,7 +1078,7 @@ describe('Additional Product API Tests', () => {
 
   describe('GET /api/v1/product/get-product/:slug', () => {
     it('should handle special characters in slug', async () => {
-      // Create a product with special characters in the name
+      
       const specialProduct = await productModel.create({
         name: 'Special & Product',
         slug: 'special-product',
@@ -1104,7 +1104,7 @@ describe('Product Edge Cases and Additional Coverage', () => {
     let productToUpdate;
 
     beforeEach(async () => {
-      // Create a product to update
+      
       productToUpdate = await productModel.create({
         name: 'Product For Updating',
         slug: 'product-for-updating',
@@ -1281,7 +1281,7 @@ describe('Additional Edge Cases and Error Handling', () => {
     });
 
     it('should reject requests with expired token', async () => {
-      // Using a properly formatted but invalid JWT token
+      
       const expiredToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEyMzQiLCJpYXQiOjE1MTYyMzkwMjIsImV4cCI6MTUxNjIzOTAyMn0.4Adcj3UFYzPUVaVF43FmMab6RlaQD8A9V8wFzzht-KQ';
 
       const response = await request(server)
@@ -1328,7 +1328,7 @@ describe('Additional Edge Cases and Error Handling', () => {
       const response = await request(server)
         .post('/api/v1/product/product-filters')
         .set('Content-Type', 'application/json')
-        .send('{"radio": [0, 500]'); // Malformed JSON
+        .send('{"radio": [0, 500]'); 
 
       expect(response.status).toBe(400);
     });
@@ -1371,7 +1371,7 @@ describe('Additional Edge Cases and Error Handling', () => {
 
   describe('Search Functionality Edge Cases', () => {
     it('should handle search with very long keyword', async () => {
-      const longKeyword = 'a'.repeat(500); // 500 characters
+      const longKeyword = 'a'.repeat(500); 
 
       const response = await request(server)
         .get(`/api/v1/product/search/${longKeyword}`);
@@ -1395,7 +1395,7 @@ describe('Additional Edge Cases and Error Handling', () => {
   describe('Braintree Payment Edge Cases', () => {
 
     it('should handle payment with zero-priced items', async () => {
-      // Create a zero-price product
+      
       const zeroProduct = await productModel.create({
         name: 'Free Product',
         slug: 'free-product',
@@ -1425,13 +1425,13 @@ describe('Additional Edge Cases and Error Handling', () => {
 
   describe('Pagination Edge Cases', () => {
     it('should handle very large skip values gracefully', async () => {
-      // If perPage is 6, and we request page 1000000, skip should be 5999994
+      
       const response = await request(server)
         .get('/api/v1/product/product-list/1000000');
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.products.length).toBe(0); // Should be empty
+      expect(response.body.products.length).toBe(0); 
     });
 
     it('should handle string with numeric characters as page parameter', async () => {
@@ -1444,13 +1444,13 @@ describe('Additional Edge Cases and Error Handling', () => {
 
   describe('Content Type Handling', () => {
     it('should handle missing content type header', async () => {
-      // Create a raw HTTP request with missing content type
+      
       const response = await request(server)
         .post('/api/v1/product/product-filters')
-        .set('Content-Type', '') // Empty content type
+        .set('Content-Type', '') 
         .send(JSON.stringify({ radio: [0, 500] }));
 
-      // Should either succeed or fail gracefully
+      
       expect([200, 400, 415]).toContain(response.status);
     });
   });

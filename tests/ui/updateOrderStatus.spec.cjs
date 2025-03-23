@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+test.describe.configure({ mode: 'serial' });
+
 const baseUrl = 'http://localhost:3000';
 
 async function loginAsAdmin(page) {

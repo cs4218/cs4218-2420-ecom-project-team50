@@ -70,7 +70,7 @@ const CartPage = () => {
         cart,
       });
       
-      if (!data?.success) {
+      if (!data?.ok) {
         setLoading(false);
         toast.error(data?.message || "Payment failed");
         return;

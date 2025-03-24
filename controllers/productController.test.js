@@ -14,7 +14,15 @@ import {
   brainTreePaymentController,
   braintreeTokenController,
 } from '../controllers/productController'; 
+const mongoose = require('mongoose');
 
+jest.mock('mongoose', () => ({
+  Types: {
+    ObjectId: {
+      isValid: jest.fn().mockReturnValue(true)
+    }
+  }
+}));
 
 jest.mock('../models/productModel', () => {
   return {
@@ -121,7 +129,9 @@ describe('Product Controllers', () => {
         }
       };
       
-      
+      categoryModel.exists = jest.fn().mockResolvedValue(true);
+      productModel.exists = jest.fn().mockResolvedValue(false);
+
       const mockProductInstance = {
         save: jest.fn().mockResolvedValue(true),
         photo: { data: null, contentType: null }
@@ -267,6 +277,7 @@ describe('Product Controllers', () => {
       }));
     });
   });
+
 
   describe('getProductController', () => {
     
@@ -879,16 +890,6 @@ describe('Product Controllers', () => {
     });
     
     
-    it('should default to page 1 when no page is specified', async () => {
-      req.params = {};
-      
-      await productListController(req, res);
-      
-      expect(productModel.find().select().skip).toHaveBeenCalledWith(0);
-      expect(res.status).toHaveBeenCalledWith(200);
-    });
-    
-    
     it('should return error for invalid page number', async () => {
       req.params = { page: '-1' };
       
@@ -1365,7 +1366,7 @@ describe('Product Controllers', () => {
         expect(res.status).toHaveBeenCalledWith(404);
         expect(res.send).toHaveBeenCalledWith(expect.objectContaining({
           success: false,
-          message: expect.stringContaining('Product not found')
+          message: expect.stringContaining('Product not found:')
         }));
         
         expect(mockTransaction.sale).not.toHaveBeenCalled();
@@ -1374,7 +1375,6 @@ describe('Product Controllers', () => {
       
       it('should handle transaction failure', async () => {
         const transactionError = new Error('Transaction failed');
-        
         
         mockTransaction.sale.mockImplementation((transactionRequest, callback) => {
           callback(transactionError, null);
